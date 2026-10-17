@@ -47,7 +47,7 @@ The warnings are from installed Starlette/Typer dependencies and do not fail the
 ```text
 make security SEMGREP=.security-venv/bin/semgrep
 Semgrep 1.181.0: 0 findings.
-Gitleaks 8.30.1: no leaks found; 16 commits scanned.
+Gitleaks 8.30.1: no leaks found; 17 commits scanned.
 ```
 
 ### Dashboard
