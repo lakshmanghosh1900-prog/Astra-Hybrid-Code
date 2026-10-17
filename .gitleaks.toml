@@ -1,0 +1,4 @@
+title = "Astra Coder gitleaks policy"
+
+[extend]
+useDefault = true

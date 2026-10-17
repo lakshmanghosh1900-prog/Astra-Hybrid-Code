@@ -1,0 +1,14 @@
+rules:
+  - id: no-subprocess-shell-true
+    languages: [python]
+    message: Do not use shell=True; commands must use argv and a policy-checked runner.
+    severity: ERROR
+    patterns:
+      - pattern: subprocess.$FUNC(..., shell=True, ...)
+  - id: no-eval-or-exec
+    languages: [python]
+    message: Dynamic code execution is prohibited in Astra core.
+    severity: ERROR
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: exec(...)
