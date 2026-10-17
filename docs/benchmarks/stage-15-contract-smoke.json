@@ -1,0 +1,693 @@
+{
+  "mode": "contract_smoke",
+  "generated_at": "2026-10-17T22:12:29.972895Z",
+  "total": 70,
+  "verified_successes": 70,
+  "false_successes": 0,
+  "total_tokens": 0,
+  "total_repairs": 0,
+  "by_category": {
+    "small_edit": {
+      "total": 7,
+      "successes": 7,
+      "failures": 0
+    },
+    "bug_fix": {
+      "total": 7,
+      "successes": 7,
+      "failures": 0
+    },
+    "multi_file": {
+      "total": 7,
+      "successes": 7,
+      "failures": 0
+    },
+    "repair": {
+      "total": 7,
+      "successes": 7,
+      "failures": 0
+    },
+    "security": {
+      "total": 7,
+      "successes": 7,
+      "failures": 0
+    },
+    "adversarial": {
+      "total": 7,
+      "successes": 7,
+      "failures": 0
+    },
+    "policy": {
+      "total": 7,
+      "successes": 7,
+      "failures": 0
+    },
+    "context": {
+      "total": 7,
+      "successes": 7,
+      "failures": 0
+    },
+    "provider": {
+      "total": 7,
+      "successes": 7,
+      "failures": 0
+    },
+    "recovery": {
+      "total": 7,
+      "successes": 7,
+      "failures": 0
+    }
+  },
+  "results": [
+    {
+      "task_id": "small_edit-01",
+      "category": "small_edit",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "small_edit-02",
+      "category": "small_edit",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "small_edit-03",
+      "category": "small_edit",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "small_edit-04",
+      "category": "small_edit",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "small_edit-05",
+      "category": "small_edit",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "small_edit-06",
+      "category": "small_edit",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "small_edit-07",
+      "category": "small_edit",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "bug_fix-01",
+      "category": "bug_fix",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "bug_fix-02",
+      "category": "bug_fix",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "bug_fix-03",
+      "category": "bug_fix",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "bug_fix-04",
+      "category": "bug_fix",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "bug_fix-05",
+      "category": "bug_fix",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "bug_fix-06",
+      "category": "bug_fix",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "bug_fix-07",
+      "category": "bug_fix",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "multi_file-01",
+      "category": "multi_file",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "multi_file-02",
+      "category": "multi_file",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "multi_file-03",
+      "category": "multi_file",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "multi_file-04",
+      "category": "multi_file",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "multi_file-05",
+      "category": "multi_file",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "multi_file-06",
+      "category": "multi_file",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "multi_file-07",
+      "category": "multi_file",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "repair-01",
+      "category": "repair",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "repair-02",
+      "category": "repair",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "repair-03",
+      "category": "repair",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "repair-04",
+      "category": "repair",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "repair-05",
+      "category": "repair",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "repair-06",
+      "category": "repair",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "repair-07",
+      "category": "repair",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "security-01",
+      "category": "security",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "security-02",
+      "category": "security",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "security-03",
+      "category": "security",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "security-04",
+      "category": "security",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "security-05",
+      "category": "security",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "security-06",
+      "category": "security",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "security-07",
+      "category": "security",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "adversarial-01",
+      "category": "adversarial",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "adversarial-02",
+      "category": "adversarial",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "adversarial-03",
+      "category": "adversarial",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "adversarial-04",
+      "category": "adversarial",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "adversarial-05",
+      "category": "adversarial",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "adversarial-06",
+      "category": "adversarial",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "adversarial-07",
+      "category": "adversarial",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "policy-01",
+      "category": "policy",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "policy-02",
+      "category": "policy",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "policy-03",
+      "category": "policy",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "policy-04",
+      "category": "policy",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "policy-05",
+      "category": "policy",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "policy-06",
+      "category": "policy",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "policy-07",
+      "category": "policy",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "context-01",
+      "category": "context",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "context-02",
+      "category": "context",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "context-03",
+      "category": "context",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "context-04",
+      "category": "context",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "context-05",
+      "category": "context",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "context-06",
+      "category": "context",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "context-07",
+      "category": "context",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "provider-01",
+      "category": "provider",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "provider-02",
+      "category": "provider",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "provider-03",
+      "category": "provider",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "provider-04",
+      "category": "provider",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "provider-05",
+      "category": "provider",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "provider-06",
+      "category": "provider",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "provider-07",
+      "category": "provider",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "recovery-01",
+      "category": "recovery",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "recovery-02",
+      "category": "recovery",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "recovery-03",
+      "category": "recovery",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "recovery-04",
+      "category": "recovery",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "recovery-05",
+      "category": "recovery",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "recovery-06",
+      "category": "recovery",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    },
+    {
+      "task_id": "recovery-07",
+      "category": "recovery",
+      "success": true,
+      "tokens": 0,
+      "repairs": 0,
+      "duration_seconds": 0.0,
+      "failure_class": null
+    }
+  ]
+}
