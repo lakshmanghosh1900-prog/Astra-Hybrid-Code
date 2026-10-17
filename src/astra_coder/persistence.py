@@ -12,6 +12,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 from sqlalchemy import JSON, DateTime, Integer, String, Text, create_engine, select
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from .runtime import TERMINAL_STATES, RiskTier, Task, TaskLimits, TaskState
 
@@ -70,7 +71,11 @@ class AuditEvent(BaseModel):
 
 class StateStore:
     def __init__(self, database_url: str = "sqlite:///./astra.db") -> None:
-        self.engine = create_engine(database_url, future=True)
+        engine_options: dict[str, Any] = {"future": True}
+        if database_url == "sqlite:///:memory:":
+            engine_options["connect_args"] = {"check_same_thread": False}
+            engine_options["poolclass"] = StaticPool
+        self.engine = create_engine(database_url, **engine_options)
         Base.metadata.create_all(self.engine)
         self.sessions = sessionmaker(self.engine, expire_on_commit=False)
 
