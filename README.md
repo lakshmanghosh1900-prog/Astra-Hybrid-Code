@@ -40,7 +40,7 @@ make typecheck
 make security
 ```
 
-`make test` is the canonical offline test command. `make security` runs Semgrep and gitleaks when available and returns a clear unavailable status otherwise; release CI installs those tools and requires them.
+`make test` is the canonical offline test command. `make security` requires Semgrep and gitleaks; if either is unavailable it fails closed. Release CI installs both tools.
 
 ## Dashboard
 

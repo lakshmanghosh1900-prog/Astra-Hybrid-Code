@@ -1,0 +1,2 @@
+# Pinned security scanner environment; install separately from the application venv.
+semgrep==1.181.0

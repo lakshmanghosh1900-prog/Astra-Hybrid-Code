@@ -6,6 +6,8 @@ __pycache__/
 .coverage
 htmlcov/
 .venv/
+.security-venv/
+.tools/
 venv/
 .env
 .env.*

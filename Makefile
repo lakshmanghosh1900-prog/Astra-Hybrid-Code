@@ -1,7 +1,9 @@
 PYTHON ?= python3.12
 PIP ?= $(PYTHON) -m pip
+SEMGREP ?= semgrep
+GITLEAKS ?= gitleaks
 
-.PHONY: install test lint typecheck security format check dashboard-install
+.PHONY: install test lint format typecheck security benchmark check dashboard-install
 
 install:
 	$(PIP) install -r requirements.lock
@@ -19,8 +21,13 @@ typecheck:
 	$(PYTHON) -m mypy src
 
 security:
-	@set -e; if command -v semgrep >/dev/null 2>&1; then semgrep --config semgrep.yml --error; else echo "semgrep unavailable: install it for release verification"; fi
-	@set -e; if command -v gitleaks >/dev/null 2>&1; then gitleaks detect --no-banner --redact; else echo "gitleaks unavailable: install it for release verification"; fi
+	@set -e; if command -v $(SEMGREP) >/dev/null 2>&1 || [ -x "$(SEMGREP)" ]; then $(SEMGREP) --config semgrep.yml --error; else echo "semgrep unavailable: release gate blocked"; exit 2; fi
+	@set -e; if command -v $(GITLEAKS) >/dev/null 2>&1; then $(GITLEAKS) detect --no-banner --redact; elif [ -x .tools/gitleaks ]; then .tools/gitleaks detect --no-banner --redact; else echo "gitleaks unavailable: release gate blocked"; exit 2; fi
+
+benchmark:
+	PYTHONPATH=src $(PYTHON) -m astra_coder.benchmark
+
+check: test lint format typecheck
 
 dashboard-install:
 	cd dashboard && npm ci
