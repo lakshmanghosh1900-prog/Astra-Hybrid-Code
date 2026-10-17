@@ -55,6 +55,10 @@ def create_app(service: TaskService | None = None) -> FastAPI:
         except ServiceError as exc:
             raise handle_error(exc) from exc
 
+    @api.get("/tasks", response_model=list[Task])
+    def list_tasks() -> list[Task]:
+        return list(task_service.list())
+
     @api.get("/tasks/{task_id}", response_model=Task)
     def status(task_id: UUID) -> Task:
         try:

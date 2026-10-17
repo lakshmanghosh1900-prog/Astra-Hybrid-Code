@@ -94,6 +94,13 @@ class StateStore:
             record = session.get(TaskRecord, str(task_id))
             return self._to_task(record) if record else None
 
+    def list_tasks(self) -> tuple[Task, ...]:
+        with self.sessions() as session:
+            records = session.scalars(
+                select(TaskRecord).order_by(TaskRecord.updated_at.desc())
+            ).all()
+            return tuple(self._to_task(record) for record in records)
+
     def incomplete_tasks(self) -> tuple[Task, ...]:
         with self.sessions() as session:
             records = session.scalars(

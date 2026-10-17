@@ -53,6 +53,9 @@ class TaskService:
         )
         return task
 
+    def list(self) -> tuple[Task, ...]:
+        return self.store.list_tasks()
+
     def get(self, task_id: UUID | str) -> Task:
         task = self.store.get_task(task_id)
         if task is None:
