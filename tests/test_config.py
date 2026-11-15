@@ -15,3 +15,8 @@ def test_invalid_port_is_rejected() -> None:
         assert "between 1 and 65535" in str(exc)
     else:
         raise AssertionError("invalid port was accepted")
+
+
+def test_settings_repr_does_not_expose_provider_key() -> None:
+    settings = load_settings({"ASTRA_OPENAI_API_KEY": "not-for-logs"})
+    assert "not-for-logs" not in repr(settings)

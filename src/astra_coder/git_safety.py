@@ -99,6 +99,10 @@ class GitSafety:
         self._workspaces[task_id] = workspace
         return workspace
 
+    def current_revision(self) -> str:
+        """Return the repository revision that a task approval must bind to."""
+        return self._git_text(["rev-parse", "HEAD"])
+
     def checkpoint(self, task_id: str, message: str) -> Checkpoint:
         workspace = self._workspace(task_id)
         if not message.strip() or "\n" in message:

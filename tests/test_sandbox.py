@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from pathlib import Path
 
 from astra_coder.sandbox import (
@@ -13,8 +14,13 @@ class FakeRunner:
         self.argv: tuple[str, ...] | None = None
         self.timeout: float | None = None
 
-    def run(self, argv: tuple[str, ...], timeout_seconds: float) -> SandboxResult:
-        self.argv = argv
+    def run(
+        self,
+        argv: Sequence[str],
+        timeout_seconds: float,
+        stdin: str | None = None,
+    ) -> SandboxResult:
+        self.argv = tuple(argv)
         self.timeout = timeout_seconds
         return self.result
 

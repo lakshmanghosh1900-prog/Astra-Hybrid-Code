@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
@@ -17,9 +18,9 @@ class FakeRunner:
         self.results = results
         self.calls: list[tuple[tuple[str, ...], Path]] = []
 
-    def run(self, argv: tuple[str, ...], cwd: Path, timeout_seconds: float) -> ProcessResult:
+    def run(self, argv: Sequence[str], cwd: Path, timeout_seconds: float) -> ProcessResult:
         del timeout_seconds
-        self.calls.append((argv, cwd))
+        self.calls.append((tuple(argv), cwd))
         return self.results.pop(0)
 
 

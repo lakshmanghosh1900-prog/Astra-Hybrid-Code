@@ -1,0 +1,297 @@
+{
+  "project": "astra-worker-smoke-482127e6",
+  "started_at": "2026-10-22T10:28:38.128726+00:00",
+  "scope": "real structured-plan arithmetic execution; NOT a model or release-quality benchmark",
+  "verification_profile": [
+    {
+      "name": "tests",
+      "argv": [
+        "python",
+        "-I",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--rootdir=/app/demo/verification",
+        "/app/demo/verification/test_contract.py"
+      ],
+      "timeout_seconds": 30
+    },
+    {
+      "name": "lint",
+      "argv": [
+        "ruff",
+        "check",
+        "--no-cache",
+        "demo_math.py"
+      ],
+      "timeout_seconds": 30
+    },
+    {
+      "name": "typecheck",
+      "argv": [
+        "mypy",
+        "--cache-dir=/tmp/mypy",
+        "demo_math.py"
+      ],
+      "timeout_seconds": 30
+    }
+  ],
+  "security_scanners": "not included in scoped demo; release gate remains blocked",
+  "original_repository_isolation": "original unchanged; API has no socket",
+  "status": "passed",
+  "positive_execution": {
+    "task_id": "81025eb2-e7a8-494f-9132-58a21b2f8522",
+    "request": {
+      "task_id": "81025eb2-e7a8-494f-9132-58a21b2f8522",
+      "requested_by": "developer",
+      "status": "succeeded",
+      "worker_id": "compose-worker",
+      "requested_at": "2026-10-22T10:28:47.107946",
+      "claimed_at": "2026-10-22T10:28:47.882879",
+      "completed_at": "2026-10-22T10:29:08.438635",
+      "error": null
+    },
+    "result": {
+      "task": {
+        "id": "81025eb2-e7a8-494f-9132-58a21b2f8522",
+        "prompt": "{\"goal\": \"structured arithmetic demo (no model generation)\", \"steps\": [{\"tool\": \"write_patch\", \"payload\": {\"path\": \"demo_math.py\", \"content\": \"def add(a: int, b: int) -> int:\\n    return a + b\\n\"}}]}",
+        "repo_path": "/repositories/repo",
+        "state": "succeeded",
+        "risk": "T2",
+        "limits": {
+          "max_steps": 32,
+          "max_seconds": 900.0,
+          "max_tokens": 100000,
+          "max_repairs": 3
+        },
+        "steps": 10,
+        "tokens": 0,
+        "repairs": 0,
+        "failure_reason": null
+      },
+      "plan": {
+        "goal": "structured arithmetic demo (no model generation)",
+        "steps": [
+          {
+            "tool": "write_patch",
+            "payload": {
+              "path": "demo_math.py",
+              "content": "def add(a: int, b: int) -> int:\n    return a + b\n"
+            },
+            "rationale": ""
+          }
+        ],
+        "requires_approval": false
+      },
+      "verification": {
+        "workspace": "/repositories/.repo.astra-worktrees/81025eb2-e7a8-494f-9132-58a21b2f8522",
+        "gates": [
+          {
+            "name": "tests",
+            "status": "passed",
+            "argv": [
+              "python",
+              "-I",
+              "-m",
+              "pytest",
+              "-q",
+              "-p",
+              "no:cacheprovider",
+              "--rootdir=/app/demo/verification",
+              "/app/demo/verification/test_contract.py"
+            ],
+            "exit_code": 0,
+            "stdout": ".......                                                                  [100%]\n",
+            "stderr": "",
+            "duration_seconds": 2.2834749539997574,
+            "findings": [],
+            "evidence_hash": "2a5ed653f41deb649ef8d709eaa0afe401666e662965015661149bb1dd2b5b1b"
+          },
+          {
+            "name": "lint",
+            "status": "passed",
+            "argv": [
+              "ruff",
+              "check",
+              "--no-cache",
+              "demo_math.py"
+            ],
+            "exit_code": 0,
+            "stdout": "All checks passed!\n",
+            "stderr": "",
+            "duration_seconds": 0.6383319510000547,
+            "findings": [],
+            "evidence_hash": "0eba7a3769b5b99251becfe3d1635076fface0a0ee4bae43bf36ad680074a624"
+          },
+          {
+            "name": "typecheck",
+            "status": "passed",
+            "argv": [
+              "mypy",
+              "--cache-dir=/tmp/mypy",
+              "demo_math.py"
+            ],
+            "exit_code": 0,
+            "stdout": "Success: no issues found in 1 source file\n",
+            "stderr": "",
+            "duration_seconds": 16.20443788500006,
+            "findings": [],
+            "evidence_hash": "2f7681eb2aa2a47dfd9ecf2bcc23f1d1b1f00f117921d0fecf818380115d9c76"
+          }
+        ],
+        "evidence_hash": "cc5a7195f4ad76217c08c710bfcb7faa5015497297c4d6134b649e41b50a8e3e"
+      },
+      "review": {
+        "accepted": true,
+        "reason": "independent evidence is complete"
+      }
+    }
+  },
+  "negative_execution": {
+    "task_id": "40a1c039-8120-4d9d-bc5a-76ce53bf28bc",
+    "request": {
+      "task_id": "40a1c039-8120-4d9d-bc5a-76ce53bf28bc",
+      "requested_by": "developer",
+      "status": "failed",
+      "worker_id": "compose-worker",
+      "requested_at": "2026-10-22T10:29:09.893142",
+      "claimed_at": "2026-10-22T10:29:09.977741",
+      "completed_at": "2026-10-22T10:29:30.687502",
+      "error": "independent verification failed"
+    },
+    "result": {
+      "task": {
+        "id": "40a1c039-8120-4d9d-bc5a-76ce53bf28bc",
+        "prompt": "{\"goal\": \"structured arithmetic demo (no model generation)\", \"steps\": [{\"tool\": \"write_patch\", \"payload\": {\"path\": \"demo_math.py\", \"content\": \"def add(a: int, b: int) -> int:\\n    return a - b\\n\"}}]}",
+        "repo_path": "/repositories/repo",
+        "state": "failed",
+        "risk": "T2",
+        "limits": {
+          "max_steps": 32,
+          "max_seconds": 900.0,
+          "max_tokens": 100000,
+          "max_repairs": 3
+        },
+        "steps": 9,
+        "tokens": 0,
+        "repairs": 0,
+        "failure_reason": "independent verification failed"
+      },
+      "plan": {
+        "goal": "structured arithmetic demo (no model generation)",
+        "steps": [
+          {
+            "tool": "write_patch",
+            "payload": {
+              "path": "demo_math.py",
+              "content": "def add(a: int, b: int) -> int:\n    return a - b\n"
+            },
+            "rationale": ""
+          }
+        ],
+        "requires_approval": false
+      },
+      "verification": {
+        "workspace": "/repositories/.repo.astra-worktrees/40a1c039-8120-4d9d-bc5a-76ce53bf28bc",
+        "gates": [
+          {
+            "name": "tests",
+            "status": "failed",
+            "argv": [
+              "python",
+              "-I",
+              "-m",
+              "pytest",
+              "-q",
+              "-p",
+              "no:cacheprovider",
+              "--rootdir=/app/demo/verification",
+              "/app/demo/verification/test_contract.py"
+            ],
+            "exit_code": 1,
+            "stdout": "FF.F...                                                                  [100%]\n=================================== FAILURES ===================================\n_____________________ test_real_workspace_function[2-3-5] ______________________\n\na = 2, b = 3, expected = 5\n\n    @pytest.mark.parametrize(\"a,b,expected\", [(2, 3, 5), (-2, 3, 1), (0, 0, 0), (9, -3, 6)])\n    def test_real_workspace_function(a: int, b: int, expected: int) -> None:\n        namespace = runpy.run_path(\"/workspace/demo_math.py\")\n>       assert namespace[\"add\"](a, b) == expected\nE       assert -1 == 5\nE        +  where -1 = <function add at 0x758d3a538b80>(2, 3)\n\n/app/demo/verification/test_contract.py:14: AssertionError\n_____________________ test_real_workspace_function[-2-3-1] _____________________\n\na = -2, b = 3, expected = 1\n\n    @pytest.mark.parametrize(\"a,b,expected\", [(2, 3, 5), (-2, 3, 1), (0, 0, 0), (9, -3, 6)])\n    def test_real_workspace_function(a: int, b: int, expected: int) -> None:\n        namespace = runpy.run_path(\"/workspace/demo_math.py\")\n>       assert namespace[\"add\"](a, b) == expected\nE       assert -5 == 1\nE        +  where -5 = <function add at 0x758d3a53a020>(-2, 3)\n\n/app/demo/verification/test_contract.py:14: AssertionError\n_____________________ test_real_workspace_function[9--3-6] _____________________\n\na = 9, b = -3, expected = 6\n\n    @pytest.mark.parametrize(\"a,b,expected\", [(2, 3, 5), (-2, 3, 1), (0, 0, 0), (9, -3, 6)])\n    def test_real_workspace_function(a: int, b: int, expected: int) -> None:\n        namespace = runpy.run_path(\"/workspace/demo_math.py\")\n>       assert namespace[\"add\"](a, b) == expected\nE       assert 12 == 6\nE        +  where 12 = <function add at 0x758d3a53a520>(9, -3)\n\n/app/demo/verification/test_contract.py:14: AssertionError\n=========================== short test summary info ============================\nFAILED ../app/demo/verification/test_contract.py::test_real_workspace_function[2-3-5]\nFAILED ../app/demo/verification/test_contract.py::test_real_workspace_function[-2-3-1]\nFAILED ../app/demo/verification/test_contract.py::test_real_workspace_function[9--3-6]\n",
+            "stderr": "",
+            "duration_seconds": 2.43107086100008,
+            "findings": [
+              "FF.F...                                                                  [100%]",
+              "=================================== FAILURES ===================================",
+              "_____________________ test_real_workspace_function[2-3-5] ______________________",
+              "a = 2, b = 3, expected = 5",
+              "@pytest.mark.parametrize(\"a,b,expected\", [(2, 3, 5), (-2, 3, 1), (0, 0, 0), (9, -3, 6)])",
+              "def test_real_workspace_function(a: int, b: int, expected: int) -> None:",
+              "namespace = runpy.run_path(\"/workspace/demo_math.py\")",
+              ">       assert namespace[\"add\"](a, b) == expected",
+              "E       assert -1 == 5",
+              "E        +  where -1 = <function add at 0x758d3a538b80>(2, 3)",
+              "/app/demo/verification/test_contract.py:14: AssertionError",
+              "_____________________ test_real_workspace_function[-2-3-1] _____________________",
+              "a = -2, b = 3, expected = 1",
+              "@pytest.mark.parametrize(\"a,b,expected\", [(2, 3, 5), (-2, 3, 1), (0, 0, 0), (9, -3, 6)])",
+              "def test_real_workspace_function(a: int, b: int, expected: int) -> None:",
+              "namespace = runpy.run_path(\"/workspace/demo_math.py\")",
+              ">       assert namespace[\"add\"](a, b) == expected",
+              "E       assert -5 == 1",
+              "E        +  where -5 = <function add at 0x758d3a53a020>(-2, 3)",
+              "/app/demo/verification/test_contract.py:14: AssertionError",
+              "_____________________ test_real_workspace_function[9--3-6] _____________________",
+              "a = 9, b = -3, expected = 6",
+              "@pytest.mark.parametrize(\"a,b,expected\", [(2, 3, 5), (-2, 3, 1), (0, 0, 0), (9, -3, 6)])",
+              "def test_real_workspace_function(a: int, b: int, expected: int) -> None:",
+              "namespace = runpy.run_path(\"/workspace/demo_math.py\")",
+              ">       assert namespace[\"add\"](a, b) == expected",
+              "E       assert 12 == 6",
+              "E        +  where 12 = <function add at 0x758d3a53a520>(9, -3)",
+              "/app/demo/verification/test_contract.py:14: AssertionError",
+              "=========================== short test summary info ============================",
+              "FAILED ../app/demo/verification/test_contract.py::test_real_workspace_function[2-3-5]",
+              "FAILED ../app/demo/verification/test_contract.py::test_real_workspace_function[-2-3-1]",
+              "FAILED ../app/demo/verification/test_contract.py::test_real_workspace_function[9--3-6]"
+            ],
+            "evidence_hash": "2fc8d43b8cf343efb49f49888b85876d40530d597a24df34c3f01b6f892523c2"
+          },
+          {
+            "name": "lint",
+            "status": "passed",
+            "argv": [
+              "ruff",
+              "check",
+              "--no-cache",
+              "demo_math.py"
+            ],
+            "exit_code": 0,
+            "stdout": "All checks passed!\n",
+            "stderr": "",
+            "duration_seconds": 0.3876398509996761,
+            "findings": [],
+            "evidence_hash": "0eba7a3769b5b99251becfe3d1635076fface0a0ee4bae43bf36ad680074a624"
+          },
+          {
+            "name": "typecheck",
+            "status": "passed",
+            "argv": [
+              "mypy",
+              "--cache-dir=/tmp/mypy",
+              "demo_math.py"
+            ],
+            "exit_code": 0,
+            "stdout": "Success: no issues found in 1 source file\n",
+            "stderr": "",
+            "duration_seconds": 2.435117992999949,
+            "findings": [],
+            "evidence_hash": "2f7681eb2aa2a47dfd9ecf2bcc23f1d1b1f00f117921d0fecf818380115d9c76"
+          }
+        ],
+        "evidence_hash": "b1d619f323b3d3696f74a6c3e72ce8d7b6d2c26e8ce5504181ececbc2255f942"
+      },
+      "review": null
+    }
+  },
+  "authentication": "401 unauthenticated; 403 developer approval/admin controls",
+  "kill_switch": "admin-only durable switch denied new tasks",
+  "durability": "same result and evidence hash survived API process restart",
+  "audit_chain": "verified across API and worker events",
+  "finished_at": "2026-10-22T10:29:35.499995+00:00",
+  "data_retained": true
+}

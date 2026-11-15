@@ -1,17 +1,28 @@
 services:
   api:
+    image: astracoder-api:local
     build:
       context: .
       dockerfile: Dockerfile
+      target: api
+    depends_on:
+      api-data-init:
+        condition: service_completed_successfully
     command: ["uvicorn", "astra_coder.api:app", "--host", "0.0.0.0", "--port", "8000"]
     environment:
       ASTRA_DATABASE_URL: sqlite:////data/astra.db
       ASTRA_BIND_HOST: 0.0.0.0
       ASTRA_BIND_PORT: 8000
+      ASTRA_AUTH_MODE: ${ASTRA_AUTH_MODE:-required}
+      ASTRA_AUTH_TOKENS: ${ASTRA_AUTH_TOKENS:-}
+      ASTRA_LOCAL_ACTOR_ID: ${ASTRA_LOCAL_ACTOR_ID:-local-user}
+      ASTRA_LOCAL_ROLE: ${ASTRA_LOCAL_ROLE:-developer}
+      ASTRA_REPO_ROOT: /repositories
     volumes:
       - astra-data:/data
+      - astra-workspaces:/repositories:ro
     ports:
-      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:${ASTRA_API_PORT:-8000}:8000"
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
@@ -20,18 +31,90 @@ services:
     cap_drop:
       - ALL
 
+  api-data-init:
+    image: astracoder-api:local
+    volumes:
+      - astra-data:/data
+      - astra-workspaces:/repositories
+    command: ["sh", "-c", "chown 10001:10001 /data /repositories"]
+    user: "0:0"
+    restart: "no"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+
+  workspace-seed:
+    profiles: ["worker"]
+    image: astracoder-api:local
+    depends_on:
+      api-data-init:
+        condition: service_completed_successfully
+    command: ["python", "-m", "astra_coder.seed_workspace"]
+    volumes:
+      - ${ASTRA_SOURCE_REPO:-.}:/source:ro
+      - astra-workspaces:/repositories
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+
+  worker:
+    profiles: ["worker"]
+    image: astracoder-worker:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: worker
+    depends_on:
+      workspace-seed:
+        condition: service_completed_successfully
+    environment:
+      ASTRA_DATABASE_URL: sqlite:////data/astra.db
+      ASTRA_REPO_ROOT: /repositories
+      ASTRA_WORKER_ENABLED: "1"
+      ASTRA_SANDBOX_IMAGE: astracoder-api:local
+      ASTRA_WORKSPACE_VOLUME: ${ASTRA_WORKSPACE_VOLUME:-astracoder-workspaces}
+      ASTRA_WORKER_GATES_JSON: ${ASTRA_WORKER_GATES_JSON:-}
+    volumes:
+      - astra-data:/data
+      - astra-workspaces:/repositories
+      # Trusted control-plane access only; never mounted in a task sandbox/API.
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add: ["${ASTRA_DOCKER_GID:-0}"]
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    stop_grace_period: 130s
+
   dashboard:
+    image: astracoder-dashboard:local
     build:
       context: ./dashboard
       dockerfile: Dockerfile
+    environment:
+      ASTRA_API_URL: ${ASTRA_API_URL:-http://api:8000}
+      ASTRA_DASHBOARD_ORIGIN: ${ASTRA_DASHBOARD_ORIGIN:-http://127.0.0.1:${ASTRA_DASHBOARD_PORT:-3000}}
+      ASTRA_DASHBOARD_API_TOKEN: ${ASTRA_DASHBOARD_API_TOKEN:-}
+      ASTRA_DASHBOARD_LOGIN_TOKEN: ${ASTRA_DASHBOARD_LOGIN_TOKEN:-}
+      ASTRA_DASHBOARD_SESSION_SECRET: ${ASTRA_DASHBOARD_SESSION_SECRET:-}
+      ASTRA_DASHBOARD_COOKIE_SECURE: ${ASTRA_DASHBOARD_COOKIE_SECURE:-false}
+      ASTRA_DASHBOARD_SESSION_TTL_SECONDS: ${ASTRA_DASHBOARD_SESSION_TTL_SECONDS:-3600}
     depends_on:
       - api
     ports:
-      - "127.0.0.1:3000:80"
+      - "127.0.0.1:${ASTRA_DASHBOARD_PORT:-3000}:3000"
     read_only: true
     tmpfs:
-      - /var/cache/nginx:rw,noexec,nosuid,size=16m
-      - /var/run:rw,noexec,nosuid,size=4m
+      - /var/cache/nginx:rw,noexec,nosuid,size=16m,uid=101,gid=101
+      - /var/run:rw,noexec,nosuid,size=4m,uid=101,gid=101
+      - /tmp:rw,noexec,nosuid,size=4m,uid=101,gid=101
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -39,3 +122,5 @@ services:
 
 volumes:
   astra-data:
+  astra-workspaces:
+    name: ${ASTRA_WORKSPACE_VOLUME:-astracoder-workspaces}

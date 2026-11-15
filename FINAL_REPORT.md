@@ -1,97 +1,68 @@
-# Astra Coder — Final Verification Report
+# ASTRA CODER v1.0.0 — Release Qualification & Ratification Report (SIGNED OFF)
 
-**Report status:** IMPLEMENTATION COMPLETE / RELEASE BLOCKED  
-**Date:** 2026-10-18  
-**Repository:** `Astra-Hybrid-Code`
+> SIGNED OFF. Operator ratified Stage 16 for the v1.0.0 release. This document
+> records Stage 16 as CLOSED PASS WITH QUALIFICATIONS. No KF-1 fix was applied
+> and no tests were rerun for this report.
 
-## Executive summary
+- REPO HEAD (gate HEAD, unchanged): `3bb8b5e589ba90f1849b666e038885c13ffb7745`
+- Evidence dir: `C:\Users\User\AppData\Local\Temp\astra-clean-linux-gate-20261115-1`
+- Generated: 2026-11-15
 
-The empty repository was rebuilt through the requested Stage 00 → Stage 16 sequence. The result is a tested Python core/API/CLI, a Next.js 14 + Tailwind dashboard, typed policy/tool/sandbox/model/repository/Git/verification boundaries, durable SQLite state and audit evidence, an end-to-end bounded orchestrator, a 70-case benchmark harness, security documentation, and container deployment files.
+## 1. Gates (clean pinned-Linux, isolated `clean-src`)
 
-The project does **not** claim a green v1.0.0 release. Several required release checks cannot run in the current container, and the locked Next.js 14 dependency has current npm audit findings that cannot be fixed without violating the user's locked Next.js 14 stack. No GitHub push or release tag was performed. This is intentional: the blueprint forbids false success.
+| Gate | Result | Exact evidence |
+| --- | --- | --- |
+| ruff check (`src tests`) | PASS | `EXIT:0`, "All checks passed!" — `02-linux-python.log` |
+| ruff format --check (`src tests`) | PASS | `EXIT:0`, "44 files already formatted" — `02-linux-python.log` |
+| mypy (`src`, canonical scope) | PASS | `EXIT:0`, "Success: no issues found in 24 source files" — `02-linux-python.log` |
+| pytest (Linux) | PASS | `EXIT:0`, **217 passed** (progress dots 72+72+72+1, 100%) — `02-linux-python.log` |
+| Semgrep | PASS | `EXIT:0`, **0 findings / 46 targets**, 2 rules — `02-linux-semgrep.log` |
+| Dashboard npm ci | PASS | `EXIT:0`, "found 0 vulnerabilities" — `03-linux-dashboard.log` |
+| Dashboard lint | PASS | `EXIT:0`, "No ESLint warnings or errors" — `03-linux-dashboard.log` |
+| Dashboard tsc --noEmit | PASS | `EXIT:0` — `03-linux-dashboard.log` |
+| Dashboard test | PASS | `EXIT:0`, **7 passed (7)** across 3 files — `03-linux-dashboard.log` |
+| Dashboard build | PASS | `EXIT:0`, "Compiled successfully" — `03-linux-dashboard.log` |
+| Dashboard audit --audit-level=high | PASS | `EXIT:0`, "found 0 vulnerabilities" — `03-linux-dashboard.log` |
 
-## Feature coverage
+Pinned toolchains used:
+- Python gate: image `astracoder-worker:d5-17-1`, runtime **Python 3.12.2**, git 2.39.5.
+- Semgrep gate: `semgrep/semgrep:1.181.0-nonroot`, runtime 1.181.0.
+- Dashboard gate: `node:24.22.2-bookworm-slim@sha256:01d566e8...`, runtime node v24.22.2.
 
-| Blueprint area | Implementation | Evidence |
-|---|---|---|
-| CLI intake/control | Typer `astra` submit/status/diff/approve/deny/cancel/doctor | `tests/test_api_cli.py` |
-| API/SSE | FastAPI typed task/control routes, health, replayable SSE audit events | `tests/test_api_cli.py` |
-| Policy gate | RBAC, risk tiers, approval, kill switch, task/daily budgets, root paths | `src/astra_coder/policy.py` |
-| Core loop | Explicit state machine, cancellation, step/time/token budgets | `src/astra_coder/runtime.py` |
-| Model gateway | Ollama/OpenAI-compatible adapters, classifier, local-first cascade, retry, circuit breaker, meter | `src/astra_coder/gateway.py` |
-| Repository intelligence | tree-sitter symbols, imports, hashes, ripgrep/fallback search, context budget | `src/astra_coder/intelligence.py` |
-| Tool mesh | Pydantic schemas, path/symlink guards, argv allowlist, single-writer atomic writes | `src/astra_coder/tools.py` |
-| Sandbox | Docker command contract: network none, read-only, cap-drop, no-new-privileges, limits, timeout | `src/astra_coder/sandbox.py` |
-| Git safety | Detached task worktrees, checkpoints, task-only rollback, dirty-work preservation | `src/astra_coder/git_safety.py` |
-| Agent roles | Architect, Editor, independent reviewer, prompt-injection guard, bounded repair | `src/astra_coder/agents.py` |
-| Verification | Tests/lint/type/Semgrep/gitleaks gate model, hashes, no-false-success | `src/astra_coder/verification.py` |
-| Optimization | Bounded cache/compaction, ASTRA.md, hooks, read-only MCP/sub-agent | `src/astra_coder/optimization.py` |
-| Persistence | SQLAlchemy/SQLite tasks, restart recovery, redacted hash-chained audit/replay | `src/astra_coder/persistence.py` |
-| Dashboard | Task list, approvals, events, diff/status, cost/reliability, component tests | `dashboard/` |
-| Benchmark | 70 tasks / 10 categories, JSON + Markdown reports, honest missing-agent baseline | `docs/benchmarks/` |
-| Release hardening | SECURITY.md, RUNBOOK.md, Compose, Dockerfiles, final report | repository root |
+## 2. Preservation (unchanged)
 
-## Checks actually run
+- HEAD: `3bb8b5e589ba90f1849b666e038885c13ffb7745` (unchanged).
+- Canonical report `reports/worker-smoke.json`: `3045C669207D0ADDCDF117EA37B6CBF82E595C67FA6AAAD018B3B6645326D5D8` (unchanged).
+- Lock `dashboard/package-lock.json`: `738F54E6736EE30DE28BD4583E5C583F38FB9983173FF85CB0A10132AE9A21B0` (unchanged).
+- Docker: 0 running / 8 total; before/after ID diff = none (`01-docker-before.txt`, `04-docker-after.txt`, `04-post.txt`).
+- Git status: pre 66 lines = post 66 lines; bytes equal; current == pre (`pre-status.txt`, `post-status.txt`, `04-post.txt`).
+- .gitignore post-gate change: only 2 lines added (.security-venv-win/ + /omnirush) to exclude local venv/binary, no code/test/Dockerfile change.
+- .env.example:28,29 operator-confirmed dummy examples (server-side-api-token / server-side-login-token), commented-out, safe to commit.
 
-### Python core
+## 3. Image identity
 
-```text
-make check PYTHON=.venv/bin/python
-69 passed (3 dependency deprecation warnings); ruff check passed; ruff format check passed; mypy passed (18 source files).
-```
+- Worker: `astracoder-worker:d5-17-1` — Image ID/RepoDigest `sha256:3a27032a442f2e6ed1a3041cf91b58653014a4c515e3705dddd338b1ef37c055` (Q1-CLOSURE SHA-256 `40C2173D...9914A1`).
+- Semgrep: `semgrep/semgrep:1.181.0-nonroot` — Image ID `sha256:4c37ae86...7ea879`.
+- Node: `node:24.22.2-bookworm-slim@sha256:01d566e8...e9` — Dockerfile digest = local ID = RepoDigest MATCH.
 
-The warnings are from installed Starlette/Typer dependencies and do not fail the suite.
+## 4. KF-1 (sole qualification)
 
-### Security scanners
+- Location: `demo/verification/test_contract.py:18`
+  `    assert os.getuid() == 10001  # type: ignore[attr-defined]`
+- `mypy .` → **EXIT 1**, exactly **1** error: unused-ignore (`demo/verification/test_contract.py:18`).
+- The file is a **Linux-only sandbox contract by design** (`os.getuid()` exists only on POSIX; no `sys.platform`/Windows guard).
+- **NO fix in v1.0.0.** Fix deferred to the next release.
+- Not claimed here: Windows pytest 215/2, gitleaks, or "CERTIFIED & PASSED".
 
-```text
-make security SEMGREP=.security-venv/bin/semgrep
-Semgrep 1.181.0: 0 findings.
-Gitleaks 8.30.1: no leaks found on the committed history.
-```
+## 5. Evidence SHAs
 
-### Dashboard
+- MANIFEST.txt: `F7AAD106AAD1633DF3F452077DBEDC99A3469795084B7FF3A97D83E023006699`
+- FINAL_RATIFICATION.txt: `24D990EADE10563224E9FC2B5ECD5FEA040AB8ED7823909EB21CECEF8D0AF8D5`
+- Q1-CLOSURE.txt: `40C2173D07E6DC90CE3930862CDB0636388AE5C9D78A80666D803B6F929914A1`
 
-```text
-npm test       # 2 tests passed
-npm run lint   # passed
-npm run build   # Next.js 14.2.35 static export passed
-npm audit --omit=dev --audit-level=high  # failed: locked Next.js 14 critical advisory
-```
+## 6. Post-v1.0.0 backlog
 
-### Benchmark
+- Stage 04b / Stage 05b are **separate work**, NOT part of v1.0.0.
 
-- Contract smoke: 70/70, 100%, zero tokens, zero repairs. This validates harness plumbing only; it is not an agent quality score.
-- Honest no-agent baseline: 0/70 with `agent_executor_not_integrated`; this prevents reporting a fake success rate.
-
-Reports: `docs/benchmarks/stage-15-contract-smoke.{json,md}` and `docs/benchmarks/stage-15-agent-baseline.{json,md}`.
-
-## Known release gaps
-
-1. **Runtime:** current container has Python 3.11; the project is correctly locked to Python 3.12.2 and the Dockerfile uses Python 3.12.2.
-2. **Docker:** Docker is not installed here. Sandbox integration, Dockerfile build, Compose validation/startup, network blocking, resource enforcement, and clean-container verification remain unrun.
-3. **Dashboard security:** the product lock requires Next.js 14, while the current npm advisory database recommends Next 16 for the reported critical issue. The dashboard is static-export-only and uses no image optimizer, server actions, or rewrites, but that does not make `npm audit` green.
-4. **Live providers:** no Ollama or remote provider credentials were used. Provider adapters are covered with fakes; an authenticated live model quality run is not claimed.
-5. **Agent benchmark:** the orchestrator is covered with deterministic fixtures, but CLI/API background task execution against a live model is not wired as a service worker.
-6. **GitHub delivery:** the configured remote is empty, but `gh` is not installed/authenticated. No push or `v1.0.0` tag was attempted.
-
-## Exact next commands on a clean target environment
-
-```bash
-git clone https://github.com/lakshmanghosh1900-prog/Astra-Hybrid-Code.git
-cd Astra-Hybrid-Code
-python3.12 -m venv .venv
-. .venv/bin/activate
-python -m pip install -r requirements.lock
-make check
-python -m venv .security-venv
-.security-venv/bin/pip install -r security-requirements.lock
-make security SEMGREP=.security-venv/bin/semgrep
-cd dashboard && npm ci && npm test && npm run lint && npm run build && cd ..
-docker compose config
-docker compose build
-docker compose up -d
-curl http://127.0.0.1:8000/health
-```
-
-Only after the Docker/3.12/security/dependency/model gates are green should an authenticated maintainer run `gh auth login`, push the commits, and create `v1.0.0`.
+---
+Status: Stage 16 CLOSED PASS WITH QUALIFICATIONS — Operator Signed Off for v1.0.0 Release (KF-1 deferred to v1.0.1; Stage 04b/05b scoped to post-v1.0.0).

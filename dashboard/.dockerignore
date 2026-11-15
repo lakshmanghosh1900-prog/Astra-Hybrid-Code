@@ -1,0 +1,17 @@
+﻿node_modules
+.next
+out
+coverage
+.cache
+.turbo
+*.tsbuildinfo
+.git
+*.log
+*.bak
+*.backup
+*~
+*.swp
+*.swo
+.env
+.env.*
+!.env.example

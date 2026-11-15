@@ -10,7 +10,7 @@ import typer
 
 from . import __version__
 from .config import load_settings
-from .persistence import StateStore
+from .persistence import AuditLog, StateStore
 from .policy import Actor, PolicyConfig, PolicyEngine
 from .runtime import RiskTier, Task
 from .service import ServiceError, SubmitRequest, TaskService
@@ -20,7 +20,10 @@ app = typer.Typer(help="Evidence-first autonomous coding agent.")
 
 def service() -> TaskService:
     settings = load_settings()
-    return TaskService(StateStore(settings.database_url), PolicyEngine(PolicyConfig()))
+    store = StateStore(settings.database_url)
+    audit = AuditLog(store)
+    store.recover_after_restart(audit)
+    return TaskService(store, PolicyEngine(PolicyConfig(repo_root=settings.repo_root)), audit)
 
 
 def actor(role: str | None = None) -> Actor:
@@ -70,7 +73,7 @@ def submit(
 def status(task_id: UUID, as_json: bool = typer.Option(False, "--json")) -> None:
     """Show durable task state."""
     try:
-        output(service().get(task_id), as_json)
+        output(service().get(actor(), task_id), as_json)
     except ServiceError as exc:
         raise typer.BadParameter(str(exc)) from exc
 
@@ -79,7 +82,7 @@ def status(task_id: UUID, as_json: bool = typer.Option(False, "--json")) -> None
 def show_diff(task_id: UUID) -> None:
     """Show task diff/status evidence."""
     try:
-        typer.echo(service().diff(task_id))
+        typer.echo(service().diff(actor(), task_id))
     except ServiceError as exc:
         raise typer.BadParameter(str(exc)) from exc
 
@@ -88,7 +91,16 @@ def show_diff(task_id: UUID) -> None:
 def approve(task_id: UUID) -> None:
     """Approve an approval-gated task."""
     try:
-        output(service().approve(actor("reviewer"), task_id), False)
+        output(service().approve(actor(), task_id), False)
+    except ServiceError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
+@app.command()
+def execute(task_id: UUID) -> None:
+    """Authorize and queue a task for the dedicated worker."""
+    try:
+        output(service().request_execution(actor(), task_id), False)
     except ServiceError as exc:
         raise typer.BadParameter(str(exc)) from exc
 
@@ -97,7 +109,7 @@ def approve(task_id: UUID) -> None:
 def deny(task_id: UUID, reason: str = typer.Option(..., "--reason")) -> None:
     """Deny an approval-gated task."""
     try:
-        output(service().deny(actor("reviewer"), task_id, reason), False)
+        output(service().deny(actor(), task_id, reason), False)
     except ServiceError as exc:
         raise typer.BadParameter(str(exc)) from exc
 

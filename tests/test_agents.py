@@ -81,14 +81,15 @@ def test_independent_reviewer_rejects_missing_or_failed_evidence() -> None:
 def test_repair_is_reproduce_first_and_bounded() -> None:
     calls: list[str] = []
     repair = RepairAgent(max_attempts=1)
-    not_reproduced = repair.repair(
-        "failure", lambda _failure: False, lambda _failure: calls.append("fix") or True
-    )
+
+    def apply_fix(_failure: str) -> bool:
+        calls.append("fix")
+        return True
+
+    not_reproduced = repair.repair("failure", lambda _failure: False, apply_fix)
     assert not not_reproduced.attempted
     assert calls == []
-    applied = repair.repair(
-        "failure", lambda _failure: True, lambda _failure: calls.append("fix") or True
-    )
+    applied = repair.repair("failure", lambda _failure: True, apply_fix)
     assert applied.attempted
     exhausted = repair.repair("failure", lambda _failure: True, lambda _failure: True)
     assert not exhausted.attempted

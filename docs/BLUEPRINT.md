@@ -32,7 +32,7 @@ The differentiator is not simply “another chat-to-code UI.” Astra combines:
 | Isolation | Docker with explicit security flags |
 | Models | Ollama/local first, OpenAI-compatible adapters, optional premium providers |
 | Observability | structlog and OpenTelemetry-compatible events |
-| Dashboard | Next.js 14 + Tailwind, isolated under `dashboard/` |
+| Dashboard | Next.js 15.5.28 + Tailwind, isolated under `dashboard/` |
 
 The dependency lockfile, Dockerfile, and `make test` are mandatory. External provider keys are environment-only. The code must work offline for tests using fakes and deterministic fixtures.
 

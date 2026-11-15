@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
@@ -18,8 +19,8 @@ class FakeExecutor:
     def __init__(self) -> None:
         self.calls: list[tuple[list[str], Path, float]] = []
 
-    def execute(self, argv: list[str], cwd: Path, timeout_seconds: float) -> ToolResult:
-        self.calls.append((argv, cwd, timeout_seconds))
+    def execute(self, argv: Sequence[str], cwd: Path, timeout_seconds: float) -> ToolResult:
+        self.calls.append((list(argv), cwd, timeout_seconds))
         return ToolResult(ok=True, output="sandboxed")
 
 

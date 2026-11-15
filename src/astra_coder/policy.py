@@ -132,7 +132,7 @@ class PolicyEngine:
         self._lock = RLock()
         self._task_usage: defaultdict[str, Usage] = defaultdict(Usage)
         self._daily_usage: defaultdict[_DayKey, Usage] = defaultdict(Usage)
-        self._approvals: dict[str, str] = {}
+        self._approvals: dict[str, tuple[str, str | None, str | None]] = {}
         self._kill_switch = False
 
     @property
@@ -147,10 +147,23 @@ class PolicyEngine:
         with self._lock:
             self._kill_switch = enabled
 
-    def approve(self, task_id: str, actor: Actor) -> None:
+    def approve(
+        self,
+        task_id: str,
+        actor: Actor,
+        spec_hash: str | None = None,
+        scope_hash: str | None = None,
+    ) -> None:
         self._require(actor, Action.APPROVE)
         with self._lock:
-            self._approvals[task_id] = actor.actor_id
+            self._approvals[task_id] = (actor.actor_id, spec_hash, scope_hash)
+
+    def restore_approval(
+        self, task_id: str, actor_id: str, spec_hash: str, scope_hash: str
+    ) -> None:
+        """Restore durable approval evidence after a process restart."""
+        with self._lock:
+            self._approvals[task_id] = (actor_id, spec_hash, scope_hash)
 
     def deny(self, task_id: str, actor: Actor) -> None:
         self._require(actor, Action.APPROVE)
@@ -167,6 +180,8 @@ class PolicyEngine:
         estimated_tokens: int = 0,
         estimated_cost: float = 0.0,
         touched_paths: Iterable[str | Path] = (),
+        spec_hash: str | None = None,
+        scope_hash: str | None = None,
     ) -> PolicyDecision:
         if estimated_tokens < 0 or estimated_cost < 0:
             return PolicyDecision(allowed=False, reason="negative budget estimate", risk=risk)
@@ -177,7 +192,7 @@ class PolicyEngine:
         with self._lock:
             if self._kill_switch and action not in {Action.READ, Action.CANCEL, Action.APPROVE}:
                 return PolicyDecision(allowed=False, reason="kill switch is enabled", risk=risk)
-            path_error = self._path_error(touched_paths)
+            path_error = self._path_error(touched_paths, action)
             if path_error:
                 return PolicyDecision(allowed=False, reason=path_error, risk=risk)
             budget_error = self._budget_error(task_id, estimated_tokens, estimated_cost)
@@ -187,7 +202,13 @@ class PolicyEngine:
                 action in _MUTATING
                 and _RISK_ORDER[risk] >= _RISK_ORDER[self.config.approval_min_risk]
             )
-            if approval_required and task_id not in self._approvals:
+            approval = self._approvals.get(task_id)
+            approval_matches = (
+                approval is not None
+                and (spec_hash is None or approval[1] == spec_hash)
+                and (scope_hash is None or approval[2] == scope_hash)
+            )
+            if approval_required and not approval_matches:
                 return PolicyDecision(
                     allowed=False,
                     approval_required=True,
@@ -234,12 +255,22 @@ class PolicyEngine:
             return "daily cost budget exceeded"
         return None
 
-    def _path_error(self, touched_paths: Iterable[str | Path]) -> str | None:
+    def _path_error(self, touched_paths: Iterable[str | Path], action: str) -> str | None:
         if self.config.repo_root is None:
             return None
         root = self.config.repo_root.resolve()
-        for raw_path in touched_paths:
-            candidate = Path(raw_path).resolve(strict=False)
+        if not root.is_dir():
+            if action in _MUTATING:
+                return "approved repository root is unavailable"
+            return None
+        paths = tuple(touched_paths)
+        if action in _MUTATING and not paths:
+            return "mutation scope is not specified"
+        for raw_path in paths:
+            candidate_path = Path(raw_path)
+            if not candidate_path.is_absolute():
+                candidate_path = root / candidate_path
+            candidate = candidate_path.resolve(strict=False)
             try:
                 candidate.relative_to(root)
             except ValueError:

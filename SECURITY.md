@@ -20,7 +20,10 @@ Astra Coder is a local-first coding-agent control plane. Model output, repositor
 
 Docker is defense in depth, not a proof against a compromised host kernel, malicious daemon, privileged operator, or unsafe image. Release deployments must pin trusted image digests, isolate the Docker daemon, use dedicated hosts or stronger sandbox providers where required, and restrict mounts.
 
-The dashboard is built as static output. The repository currently locks Next.js 14 per the product contract; the current npm advisory database reports vulnerabilities whose fixed versions require a later Next major. Do not expose the dashboard build with a Next server runtime until that locked-version decision is revisited.
+The dashboard runs the Next server runtime so its server-side session and API
+proxy are available. It is pinned to Next.js 15.5.28 and the current production
+dependency audit reports zero high/critical vulnerabilities. Keep the dashboard
+behind the same controlled-machine and authentication boundaries as the API.
 
 The current environment used for development did not provide Python 3.12, Docker, Semgrep, or gitleaks, so those gates are recorded as unavailable rather than silently passed.
 

@@ -96,3 +96,19 @@ def test_unknown_role_fails_closed() -> None:
         Actor(actor_id="x", role="model"), Action.READ, RiskTier.T0, "task"
     )
     assert not decision.allowed
+
+
+def test_approval_hashes_must_all_match() -> None:
+    engine = PolicyEngine()
+    reviewer = Actor(actor_id="reviewer", role=Role.REVIEWER)
+    developer = Actor(actor_id="dev", role=Role.DEVELOPER)
+    engine.approve("task", reviewer, "spec-a", "scope-a")
+    decision = engine.evaluate(
+        developer,
+        Action.EDIT,
+        RiskTier.T2,
+        "task",
+        spec_hash="spec-b",
+        scope_hash="scope-a",
+    )
+    assert not decision.allowed

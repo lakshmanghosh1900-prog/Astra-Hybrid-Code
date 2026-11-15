@@ -21,3 +21,16 @@ venv/
 node_modules/
 dashboard/.next/
 dashboard/out/
+
+# Local build artifacts
+*.tsbuildinfo
+*.db
+*.db-*
+*.bak
+*.egg-info/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.security-venv-win/
+/omnirush
