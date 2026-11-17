@@ -139,3 +139,6 @@ ruled out (no SQLite permission exception, no startup failure, no readiness time
 Not run (hard stop): worker smoke, unrelated tests, Blocker 2, D6, deployments,
 later stages. This file does not claim status for any stage beyond D5.4.
 
+> Scope note: D54 is a D5.4-only record for the Dockerfile patch and health gate.
+> Worker smoke is separate evidence and is not covered by this record.
+
