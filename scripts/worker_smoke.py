@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import argparse
+import hashlib
 import json
 import os
 import secrets
@@ -14,8 +16,108 @@ from typing import Any
 
 import httpx
 
+SEMGREP_VERSION = "1.181.0"
+GITLEAKS_VERSION = "v8.30.1"
+SCANNER_CONFIG_FILES = ("semgrep.yml", ".semgrepignore", ".gitleaks.toml", ".gitleaksignore")
+DEMO_GATES = (
+    {
+        "name": "tests",
+        "argv": [
+            "python",
+            "-I",
+            "-m",
+            "pytest",
+            "-q",
+            "-p",
+            "no:cacheprovider",
+            "--rootdir=/app/demo/verification",
+            "/app/demo/verification/test_contract.py",
+        ],
+        "timeout_seconds": 30,
+    },
+    {
+        "name": "lint",
+        "argv": ["ruff", "check", "--no-cache", "demo_math.py"],
+        "timeout_seconds": 30,
+    },
+    {
+        "name": "typecheck",
+        "argv": ["mypy", "--cache-dir=/tmp/mypy", "demo_math.py"],
+        "timeout_seconds": 30,
+    },
+)
+SECURITY_GATES = (
+    {
+        "name": "semgrep",
+        "argv": [
+            "semgrep",
+            "--config",
+            "semgrep.yml",
+            "--error",
+            "--metrics=off",
+            "--include",
+            "*.py",
+            "src",
+            "tests",
+            "scripts",
+            "demo",
+        ],
+        "timeout_seconds": 300,
+    },
+    {
+        "name": "gitleaks",
+        "argv": [
+            "gitleaks",
+            "detect",
+            "--no-banner",
+            "--redact",
+            "--config",
+            ".gitleaks.toml",
+            "--gitleaks-ignore-path",
+            ".",
+        ],
+        "timeout_seconds": 300,
+    },
+)
+FULL_GATES = DEMO_GATES + SECURITY_GATES
+PROFILE_GATES = {"demo": DEMO_GATES, "full": FULL_GATES}
+
+
+def profile_gates(profile: str) -> list[dict[str, Any]]:
+    return [dict(gate) for gate in PROFILE_GATES[profile]]
+
+
+def report_path(root: Path, profile: str) -> Path:
+    filename = "worker-smoke.json" if profile == "demo" else "worker-smoke-security.json"
+    return root / "reports" / filename
+
+
+def config_hashes(root: Path) -> dict[str, str]:
+    return {
+        name: hashlib.sha256((root / name).read_bytes()).hexdigest()
+        for name in SCANNER_CONFIG_FILES
+    }
+
+
+def scanner_evidence(root: Path, tool_versions: dict[str, str] | None = None) -> dict[str, Any]:
+    return {
+        "included": True,
+        "gates": [gate["name"] for gate in SECURITY_GATES],
+        "tool_versions": tool_versions
+        or {"semgrep": SEMGREP_VERSION, "gitleaks": GITLEAKS_VERSION},
+        "config_hashes": config_hashes(root),
+    }
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--profile", choices=("demo", "full"), default="demo")
+    return parser.parse_args()
+
 
 def main() -> None:
+    args = parse_args()
+    profile = args.profile
     root = Path(__file__).resolve().parents[1]
     docker = shutil.which("docker")
     if docker is None:
@@ -23,33 +125,7 @@ def main() -> None:
     project = f"astra-worker-smoke-{secrets.token_hex(4)}"
     env = os.environ.copy()
     tokens = {role: secrets.token_urlsafe(32) for role in ("developer", "reviewer", "admin")}
-    gates = [
-        {
-            "name": "tests",
-            "argv": [
-                "python",
-                "-I",
-                "-m",
-                "pytest",
-                "-q",
-                "-p",
-                "no:cacheprovider",
-                "--rootdir=/app/demo/verification",
-                "/app/demo/verification/test_contract.py",
-            ],
-            "timeout_seconds": 30,
-        },
-        {
-            "name": "lint",
-            "argv": ["ruff", "check", "--no-cache", "demo_math.py"],
-            "timeout_seconds": 30,
-        },
-        {
-            "name": "typecheck",
-            "argv": ["mypy", "--cache-dir=/tmp/mypy", "demo_math.py"],
-            "timeout_seconds": 30,
-        },
-    ]
+    gates = profile_gates(profile)
     env.update(
         {
             "ASTRA_AUTH_MODE": "tokens",
@@ -131,17 +207,42 @@ def main() -> None:
         "scope": (
             "real structured-plan arithmetic execution; NOT a model or release-quality benchmark"
         ),
+        "verification_profile_name": profile,
         "verification_profile": gates,
-        "security_scanners": "not included in scoped demo; release gate remains blocked",
+        "security_scanners": (
+            scanner_evidence(root)
+            if profile == "full"
+            else "not included in scoped demo; release gate remains blocked"
+        ),
     }
     try:
         command("up", "-d", "--no-build", "api", "dashboard", "worker")
         wait_api()
+        if profile == "full":
+            report["security_scanners"] = scanner_evidence(
+                root,
+                {
+                    "semgrep": command(
+                        "exec", "-T", "worker", "semgrep", "--version"
+                    ).stdout.strip(),
+                    "gitleaks": command(
+                        "exec", "-T", "worker", "gitleaks", "version"
+                    ).stdout.strip(),
+                },
+            )
         assert client.get("/tasks").status_code == 401
         assert httpx.get("http://127.0.0.1:13000/", timeout=10).status_code == 200
         good = run_task("def add(a: int, b: int) -> int:\n    return a + b\n", "succeeded")
         good_result = good["result"]
         assert all(gate["status"] == "passed" for gate in good_result["verification"]["gates"])
+        if profile == "full":
+            assert [gate["name"] for gate in good_result["verification"]["gates"]] == [
+                "tests",
+                "lint",
+                "typecheck",
+                "semgrep",
+                "gitleaks",
+            ]
         assert good_result["review"]["accepted"] is True
         expected_workspace = f"/repositories/.repo.astra-worktrees/{good['task_id']}"
         assert good_result["verification"]["workspace"] == expected_workspace
@@ -227,11 +328,12 @@ def main() -> None:
         command("stop")
         report["finished_at"] = datetime.now(UTC).isoformat()
         report["data_retained"] = True
-        # Standard artifact, containing only demo inputs/evidence, never credentials.
-        output = root / "reports" / "worker-smoke.json"
+        output = report_path(root, profile)
         output.parent.mkdir(exist_ok=True)
         output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-        print("Evidence: reports/worker-smoke.json (services stopped, volumes retained)")
+        print(
+            f"Evidence: {output.relative_to(root).as_posix()} (services stopped, volumes retained)"
+        )
 
 
 if __name__ == "__main__":

@@ -216,6 +216,26 @@ def test_named_volume_exposes_only_task_subpath(tmp_path: Path, read_only: bool)
         sandbox.command(request.model_copy(update={"workspace": tmp_path / "missing"}))
 
 
+def test_git_metadata_is_mounted_read_only_for_scanner_gates(tmp_path: Path) -> None:
+    request = SandboxRequest(
+        image="astra:test",
+        argv=["gitleaks", "detect", "--no-banner"],
+        workspace=tmp_path,
+        workspace_volume="astra_repos",
+        volume_subpath=".repo.astra-worktrees/task-123",
+        git_metadata_subpath="repo/.git",
+        read_only_workspace=True,
+    )
+    command = DockerSandbox(docker_binary="docker").command(request)
+    mounts = [part for part in command if part.startswith("--mount=")]
+    assert mounts == [
+        "--mount=type=volume,src=astra_repos,dst=/workspace,"
+        "volume-subpath=.repo.astra-worktrees/task-123,volume-nocopy,readonly",
+        "--mount=type=volume,src=astra_repos,dst=/workspace/.git,"
+        "volume-subpath=repo/.git,volume-nocopy,readonly",
+    ]
+
+
 @pytest.mark.parametrize("read_only", [False, True])
 def test_bind_mount_retains_workspace_and_requested_access(tmp_path: Path, read_only: bool) -> None:
     request = SandboxRequest(
@@ -238,6 +258,19 @@ def test_unsafe_volume_subpaths_are_rejected(tmp_path: Path, subpath: str) -> No
             workspace=tmp_path,
             workspace_volume="astra_repos",
             volume_subpath=subpath,
+        )
+
+
+@pytest.mark.parametrize("subpath", ["", ".", "..", "a/../b", "/repo/.git", "a\\b"])
+def test_unsafe_git_metadata_subpaths_are_rejected(tmp_path: Path, subpath: str) -> None:
+    with pytest.raises(ValidationError):
+        SandboxRequest(
+            image="astra:test",
+            argv=["gitleaks", "detect"],
+            workspace=tmp_path,
+            workspace_volume="astra_repos",
+            volume_subpath="tasks/123",
+            git_metadata_subpath=subpath,
         )
 
 

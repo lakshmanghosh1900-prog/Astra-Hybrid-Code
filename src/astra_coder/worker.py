@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import shutil
+import subprocess
 import time
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -21,6 +23,28 @@ from .sandbox import DockerSandbox, SandboxRequest, SandboxResult
 from .service import TaskService
 from .tools import ToolResult
 from .verification import GateSpec, ProcessResult, VerificationEngine
+
+
+def _git_metadata_subpath(workspace: Path, volume_root: Path | None) -> str:
+    if volume_root is None:
+        raise ValueError("scanner git metadata requires a configured volume root")
+    git = shutil.which("git")
+    if git is None:
+        raise ValueError("git unavailable; scanner git metadata cannot be resolved")
+    checked = subprocess.run(  # noqa: S603
+        [git, "-C", str(workspace), "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    if checked.returncode != 0:
+        raise ValueError(checked.stderr.strip() or "unable to resolve git common directory")
+    common_directory = Path(checked.stdout.strip()).resolve()
+    relative = common_directory.relative_to(volume_root.resolve()).as_posix()
+    if any(part in {"", ".", ".."} for part in relative.split("/")):
+        raise ValueError("git common directory is outside the workspace volume")
+    return relative
 
 
 class _DockerWorkspaceAdapter:
@@ -118,12 +142,14 @@ class DockerVerificationRunner:
         sandbox: DockerSandbox | None = None,
         workspace_volume: str | None = None,
         volume_subpath: str | None = None,
+        volume_root: str | Path | None = None,
         boundary_guard: Callable[[], None] | None = None,
         remaining_seconds: Callable[[], float] | None = None,
     ) -> None:
         self._adapter = _DockerWorkspaceAdapter(
             workspace, image, sandbox, workspace_volume, volume_subpath
         )
+        self._volume_root = Path(volume_root).resolve() if volume_root is not None else None
         self._boundary_guard = boundary_guard
         self._remaining_seconds = remaining_seconds
 
@@ -134,6 +160,14 @@ class DockerVerificationRunner:
             timeout_seconds = min(timeout_seconds, self._remaining_seconds())
         try:
             request = self._adapter.request(argv, cwd, timeout_seconds)
+            if Path(argv[0]).name in {"gitleaks", "gitleaks.exe"}:
+                request = request.model_copy(
+                    update={
+                        "git_metadata_subpath": _git_metadata_subpath(
+                            self._adapter.workspace, self._volume_root
+                        )
+                    }
+                )
             result = self._adapter.sandbox.run(
                 request.model_copy(update={"read_only_workspace": True})
             )
@@ -284,6 +318,7 @@ class DockerOrchestratorFactory:
                 sandbox=sandbox,
                 workspace_volume=self.workspace_volume,
                 volume_subpath=subpath,
+                volume_root=self.volume_root,
                 boundary_guard=tool_boundary,
                 remaining_seconds=remaining,
             ),

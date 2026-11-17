@@ -21,7 +21,7 @@ from astra_coder.runtime import RiskTier, Task, TaskLimits, TaskState
 from astra_coder.sandbox import DockerSandbox, SandboxResult
 from astra_coder.service import SubmitRequest, TaskService
 from astra_coder.tools import ToolResult
-from astra_coder.verification import GateName, GateSpec
+from astra_coder.verification import GateName, GateSpec, VerificationEngine
 from astra_coder.worker import (
     DockerCommandExecutor,
     DockerOrchestratorFactory,
@@ -118,6 +118,28 @@ def test_verification_runner_translates_sandbox_result() -> None:
     assert not result.timed_out
     assert runner.timeout == 12.0
     assert runner.argv is not None and runner.argv[-3:] == ("astra:test", "pytest", "-q")
+
+
+def test_gitleaks_gate_mounts_read_only_git_metadata(tmp_path: Path) -> None:
+    repo = make_git_repo(tmp_path)
+    sandbox, runner = docker_sandbox(SandboxResult(ok=True, output="no leaks found", exit_code=0))
+    verifier = DockerVerificationRunner(
+        repo,
+        "astra:test",
+        sandbox=sandbox,
+        workspace_volume="astra_repos",
+        volume_subpath="repo",
+        volume_root=tmp_path,
+    )
+    engine = VerificationEngine(
+        verifier, (GateSpec(name=GateName.GITLEAKS, argv=("gitleaks", "detect")),)
+    )
+
+    assert engine.run(repo).passed
+    assert runner.argv is not None
+    assert any("dst=/workspace/.git" in part for part in runner.argv)
+    assert any("volume-subpath=repo/.git" in part for part in runner.argv)
+    assert any("dst=/workspace/.git" in part and ",readonly" in part for part in runner.argv)
 
 
 def test_docker_orchestrator_factory_injects_sandboxed_commands(tmp_path: Path) -> None:

@@ -33,11 +33,12 @@ class SandboxRequest(BaseModel):
         default=None, min_length=2, max_length=255, pattern=r"^[A-Za-z0-9][A-Za-z0-9_.-]+$"
     )
     volume_subpath: str | None = Field(default=None, min_length=1, max_length=4_096)
+    git_metadata_subpath: str | None = Field(default=None, min_length=1, max_length=4_096)
     read_only_workspace: bool = False
     timeout_seconds: float = Field(default=120.0, gt=0, le=3_600)
     limits: SandboxLimits = Field(default_factory=SandboxLimits)
 
-    @field_validator("volume_subpath")
+    @field_validator("volume_subpath", "git_metadata_subpath")
     @classmethod
     def validate_volume_subpath(cls, value: str | None) -> str | None:
         if value is not None and (
@@ -54,6 +55,8 @@ class SandboxRequest(BaseModel):
             raise ValueError(
                 "workspace_volume and a task-scoped volume_subpath are required together"
             )
+        if self.git_metadata_subpath is not None and self.workspace_volume is None:
+            raise ValueError("git_metadata_subpath requires workspace_volume")
         return self
 
 
@@ -146,6 +149,14 @@ class DockerSandbox:
             if "," in str(workspace):
                 raise ValueError("sandbox bind workspace must not contain commas")
             mount = f"--mount=type=bind,src={workspace},dst=/workspace{access}"
+        mounts = [mount]
+        if request.git_metadata_subpath is not None:
+            if request.workspace_volume is None:
+                raise ValueError("git_metadata_subpath requires workspace_volume")
+            mounts.append(
+                f"--mount=type=volume,src={request.workspace_volume},dst=/workspace/.git,"
+                f"volume-subpath={request.git_metadata_subpath},volume-nocopy,readonly"
+            )
         return (
             binary,
             "run",
@@ -160,7 +171,7 @@ class DockerSandbox:
             f"--memory={request.limits.memory}",
             f"--cpus={request.limits.cpus}",
             "--user=10001:10001",
-            mount,
+            *mounts,
             f"--tmpfs=/tmp:rw,noexec,nosuid,size={request.limits.tmpfs_size}",
             "--workdir=/workspace",
             request.image,
