@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from . import __version__
 from .auth import AuthenticationError, PrincipalResolver, load_principal_resolver
 from .config import Settings, load_settings
+from .free_cascade import build_free_cascade_gateway
 from .persistence import AuditLog, StateStore
 from .policy import Actor, PolicyConfig, PolicyEngine
 from .runtime import Task
@@ -36,7 +37,8 @@ def create_service(settings: Settings | None = None) -> TaskService:
     # Dedicated workers recover their own running requests explicitly.
     store.recover_after_restart(audit)
     policy = PolicyEngine(PolicyConfig(repo_root=settings.repo_root))
-    return TaskService(store, policy, audit)
+    gateway = build_free_cascade_gateway(settings)
+    return TaskService(store, policy, audit, gateway=gateway)
 
 
 def create_app(

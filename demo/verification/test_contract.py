@@ -15,7 +15,8 @@ def test_real_workspace_function(a: int, b: int, expected: int) -> None:
 
 
 def test_sandbox_is_not_the_worker_host() -> None:
-    assert os.getuid() == 10001  # type: ignore[attr-defined]
+    getuid = getattr(os, "getuid", None)
+    assert callable(getuid) and getuid() == 10001
     assert not Path("/var/run/docker.sock").exists()
     assert not Path("/repositories/repo").exists()
 
