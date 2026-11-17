@@ -1,8 +1,3 @@
-title = "Astra Coder gitleaks policy"
-
-[extend]
-useDefault = true
-
 [allowlist]
-description = "Pre-existing report file, not Stage 04b code. Example keys verified as false positive on 2026-11-17, not active secrets."
+description = "Pre-existing D5.4 verification report hashes, not secrets. Docker image IDs, container IDs and SHA-256 evidence, verified false positive, not active secrets."
 paths = ["reports/d54-dockerfile-verify-20261025.md"]
