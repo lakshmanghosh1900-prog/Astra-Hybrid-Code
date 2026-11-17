@@ -17,7 +17,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 COPY pyproject.toml requirements.lock security-requirements.lock README.md ./
 COPY src ./src
 RUN python -m pip install --timeout=120 --retries=5 -r requirements.lock \
-    && python -m pip install --timeout=120 --retries=5 -r security-requirements.lock \
+    && python -m venv /opt/scanners \
+    && /opt/scanners/bin/pip install --timeout=120 --retries=5 -r security-requirements.lock \
+    && ln -s /opt/scanners/bin/semgrep /usr/local/bin/semgrep \
     && curl -fsSL -o /tmp/gitleaks.tar.gz \
        "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
     && echo "${GITLEAKS_SHA256}  /tmp/gitleaks.tar.gz" | sha256sum -c - \
