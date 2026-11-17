@@ -1,0 +1,431 @@
+{
+  "project": "astra-worker-smoke-35473aca",
+  "started_at": "2026-11-17T22:33:34.537668+00:00",
+  "scope": "real structured-plan arithmetic execution; NOT a model or release-quality benchmark",
+  "verification_profile_name": "full",
+  "verification_profile": [
+    {
+      "name": "tests",
+      "argv": [
+        "python",
+        "-I",
+        "-m",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--rootdir=/app/demo/verification",
+        "/app/demo/verification/test_contract.py"
+      ],
+      "timeout_seconds": 30
+    },
+    {
+      "name": "lint",
+      "argv": [
+        "ruff",
+        "check",
+        "--no-cache",
+        "demo_math.py"
+      ],
+      "timeout_seconds": 30
+    },
+    {
+      "name": "typecheck",
+      "argv": [
+        "mypy",
+        "--cache-dir=/tmp/mypy",
+        "demo_math.py"
+      ],
+      "timeout_seconds": 30
+    },
+    {
+      "name": "semgrep",
+      "argv": [
+        "semgrep",
+        "--config",
+        "semgrep.yml",
+        "--error",
+        "--metrics=off",
+        "--include",
+        "*.py",
+        "src",
+        "tests",
+        "scripts",
+        "demo"
+      ],
+      "timeout_seconds": 300
+    },
+    {
+      "name": "gitleaks",
+      "argv": [
+        "gitleaks-scan",
+        "detect",
+        "--no-banner",
+        "--redact",
+        "--config",
+        ".gitleaks.toml",
+        "--gitleaks-ignore-path",
+        "."
+      ],
+      "timeout_seconds": 300
+    }
+  ],
+  "security_scanners": {
+    "included": true,
+    "gates": [
+      "semgrep",
+      "gitleaks"
+    ],
+    "tool_versions": {
+      "semgrep": "1.181.0",
+      "gitleaks": "8.30.1"
+    },
+    "config_hashes": {
+      "semgrep.yml": "9e075039c464c2f4596a5a08bab9f7ae9cc75e710d40a5d983ede9a72476860d",
+      ".semgrepignore": "1b5578c6490fabc8103db658799d2275104b79aa9218e960d588326df5398e75",
+      ".gitleaks.toml": "60620bcc8074b7adeecedaf742911dc03a111e035139e8828e23d6bb6802a910",
+      ".gitleaksignore": "d2fd4e68776e3a5c1a3709c0188ab47622b5e90ab9b289583988bf3343c33bcc"
+    }
+  },
+  "original_repository_isolation": "original unchanged; API has no socket",
+  "status": "passed",
+  "positive_execution": {
+    "task_id": "10684c26-6dc7-43ae-82b8-60f604eaee90",
+    "request": {
+      "task_id": "10684c26-6dc7-43ae-82b8-60f604eaee90",
+      "requested_by": "developer",
+      "status": "succeeded",
+      "worker_id": "compose-worker",
+      "requested_at": "2026-11-17T22:33:43.818322",
+      "claimed_at": "2026-11-17T22:33:43.866823",
+      "completed_at": "2026-11-17T22:33:55.077661",
+      "error": null
+    },
+    "result": {
+      "task": {
+        "id": "10684c26-6dc7-43ae-82b8-60f604eaee90",
+        "prompt": "{\"goal\": \"structured arithmetic demo (no model generation)\", \"steps\": [{\"tool\": \"write_patch\", \"payload\": {\"path\": \"demo_math.py\", \"content\": \"def add(a: int, b: int) -> int:\\n    return a + b\\n\"}}]}",
+        "repo_path": "/repositories/repo",
+        "state": "succeeded",
+        "risk": "T2",
+        "limits": {
+          "max_steps": 32,
+          "max_seconds": 900.0,
+          "max_tokens": 100000,
+          "max_repairs": 3
+        },
+        "steps": 12,
+        "tokens": 0,
+        "repairs": 0,
+        "failure_reason": null
+      },
+      "plan": {
+        "goal": "structured arithmetic demo (no model generation)",
+        "steps": [
+          {
+            "tool": "write_patch",
+            "payload": {
+              "path": "demo_math.py",
+              "content": "def add(a: int, b: int) -> int:\n    return a + b\n"
+            },
+            "rationale": ""
+          }
+        ],
+        "requires_approval": false
+      },
+      "verification": {
+        "workspace": "/repositories/.repo.astra-worktrees/10684c26-6dc7-43ae-82b8-60f604eaee90",
+        "gates": [
+          {
+            "name": "tests",
+            "status": "passed",
+            "argv": [
+              "python",
+              "-I",
+              "-m",
+              "pytest",
+              "-q",
+              "-p",
+              "no:cacheprovider",
+              "--rootdir=/app/demo/verification",
+              "/app/demo/verification/test_contract.py"
+            ],
+            "exit_code": 0,
+            "stdout": ".......                                                                  [100%]\n",
+            "stderr": "",
+            "duration_seconds": 1.5224234489999162,
+            "findings": [],
+            "evidence_hash": "2a5ed653f41deb649ef8d709eaa0afe401666e662965015661149bb1dd2b5b1b"
+          },
+          {
+            "name": "lint",
+            "status": "passed",
+            "argv": [
+              "ruff",
+              "check",
+              "--no-cache",
+              "demo_math.py"
+            ],
+            "exit_code": 0,
+            "stdout": "All checks passed!\n",
+            "stderr": "",
+            "duration_seconds": 0.38082098099994255,
+            "findings": [],
+            "evidence_hash": "0eba7a3769b5b99251becfe3d1635076fface0a0ee4bae43bf36ad680074a624"
+          },
+          {
+            "name": "typecheck",
+            "status": "passed",
+            "argv": [
+              "mypy",
+              "--cache-dir=/tmp/mypy",
+              "demo_math.py"
+            ],
+            "exit_code": 0,
+            "stdout": "Success: no issues found in 1 source file\n",
+            "stderr": "",
+            "duration_seconds": 2.3991574940000646,
+            "findings": [],
+            "evidence_hash": "2f7681eb2aa2a47dfd9ecf2bcc23f1d1b1f00f117921d0fecf818380115d9c76"
+          },
+          {
+            "name": "semgrep",
+            "status": "passed",
+            "argv": [
+              "semgrep",
+              "--config",
+              "semgrep.yml",
+              "--error",
+              "--metrics=off",
+              "--include",
+              "*.py",
+              "src",
+              "tests",
+              "scripts",
+              "demo"
+            ],
+            "exit_code": 0,
+            "stdout": "               \n               \n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 Scan Status \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n  Scanning 52 files tracked by git with 5 Code rules:\n  Scanning 52 files with 5 python rules.\n                \n                \n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 Scan Summary \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n\u2705 Scan completed successfully.\n \u2022 Findings: 0 (0 blocking)\n \u2022 Rules run: 5\n \u2022 Targets scanned: 52\n \u2022 Parsed lines: ~100.0%\n \u2022 Scan skipped: \n   \u25e6 Not matching --include patterns: 1\n \u2022 For a detailed list of skipped files and lines, run semgrep with the --verbose flag\nRan 5 rules on 52 files: 0 findings.\n",
+            "stderr": "",
+            "duration_seconds": 4.161656935999872,
+            "findings": [],
+            "evidence_hash": "b7d11f35a1dabf1c4531f54350a8da8c9b87166fada598be0a9dc25fc3ad801a"
+          },
+          {
+            "name": "gitleaks",
+            "status": "passed",
+            "argv": [
+              "gitleaks-scan",
+              "detect",
+              "--no-banner",
+              "--redact",
+              "--config",
+              ".gitleaks.toml",
+              "--gitleaks-ignore-path",
+              "."
+            ],
+            "exit_code": 0,
+            "stdout": "\u001b[90m10:33PM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1mUnknown SCM platform. Use --platform to include links in findings.\u001b[0m \u001b[36mhost=\u001b[0m\n\u001b[90m10:33PM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1m47 commits scanned.\u001b[0m\n\u001b[90m10:33PM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1mscanned ~1108752 bytes (1.11 MB) in 613ms\u001b[0m\n\u001b[90m10:33PM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1mno leaks found\u001b[0m\n",
+            "stderr": "",
+            "duration_seconds": 1.7513697469998988,
+            "findings": [],
+            "evidence_hash": "4512130d48e4a5ef575c65f79263073189eccf69f0c0d413f422459654e0f801"
+          }
+        ],
+        "evidence_hash": "5fccef6b8328168245d4d6ee69331cab8972297963ccffbb3721930f498fce96"
+      },
+      "review": {
+        "accepted": true,
+        "reason": "independent evidence is complete"
+      }
+    }
+  },
+  "negative_execution": {
+    "task_id": "af88f8d5-a895-4bc1-8762-3396c8665a4d",
+    "request": {
+      "task_id": "af88f8d5-a895-4bc1-8762-3396c8665a4d",
+      "requested_by": "developer",
+      "status": "failed",
+      "worker_id": "compose-worker",
+      "requested_at": "2026-11-17T22:33:56.306534",
+      "claimed_at": "2026-11-17T22:33:56.607049",
+      "completed_at": "2026-11-17T22:34:07.406538",
+      "error": "independent verification failed"
+    },
+    "result": {
+      "task": {
+        "id": "af88f8d5-a895-4bc1-8762-3396c8665a4d",
+        "prompt": "{\"goal\": \"structured arithmetic demo (no model generation)\", \"steps\": [{\"tool\": \"write_patch\", \"payload\": {\"path\": \"demo_math.py\", \"content\": \"def add(a: int, b: int) -> int:\\n    return a - b\\n\"}}]}",
+        "repo_path": "/repositories/repo",
+        "state": "failed",
+        "risk": "T2",
+        "limits": {
+          "max_steps": 32,
+          "max_seconds": 900.0,
+          "max_tokens": 100000,
+          "max_repairs": 3
+        },
+        "steps": 11,
+        "tokens": 0,
+        "repairs": 0,
+        "failure_reason": "independent verification failed"
+      },
+      "plan": {
+        "goal": "structured arithmetic demo (no model generation)",
+        "steps": [
+          {
+            "tool": "write_patch",
+            "payload": {
+              "path": "demo_math.py",
+              "content": "def add(a: int, b: int) -> int:\n    return a - b\n"
+            },
+            "rationale": ""
+          }
+        ],
+        "requires_approval": false
+      },
+      "verification": {
+        "workspace": "/repositories/.repo.astra-worktrees/af88f8d5-a895-4bc1-8762-3396c8665a4d",
+        "gates": [
+          {
+            "name": "tests",
+            "status": "failed",
+            "argv": [
+              "python",
+              "-I",
+              "-m",
+              "pytest",
+              "-q",
+              "-p",
+              "no:cacheprovider",
+              "--rootdir=/app/demo/verification",
+              "/app/demo/verification/test_contract.py"
+            ],
+            "exit_code": 1,
+            "stdout": "FF.F...                                                                  [100%]\n=================================== FAILURES ===================================\n_____________________ test_real_workspace_function[2-3-5] ______________________\n\na = 2, b = 3, expected = 5\n\n    @pytest.mark.parametrize(\"a,b,expected\", [(2, 3, 5), (-2, 3, 1), (0, 0, 0), (9, -3, 6)])\n    def test_real_workspace_function(a: int, b: int, expected: int) -> None:\n        namespace = runpy.run_path(\"/workspace/demo_math.py\")\n>       assert namespace[\"add\"](a, b) == expected\nE       assert -1 == 5\nE        +  where -1 = <function add at 0x7566b5e25300>(2, 3)\n\n/app/demo/verification/test_contract.py:14: AssertionError\n_____________________ test_real_workspace_function[-2-3-1] _____________________\n\na = -2, b = 3, expected = 1\n\n    @pytest.mark.parametrize(\"a,b,expected\", [(2, 3, 5), (-2, 3, 1), (0, 0, 0), (9, -3, 6)])\n    def test_real_workspace_function(a: int, b: int, expected: int) -> None:\n        namespace = runpy.run_path(\"/workspace/demo_math.py\")\n>       assert namespace[\"add\"](a, b) == expected\nE       assert -5 == 1\nE        +  where -5 = <function add at 0x7566b5e26980>(-2, 3)\n\n/app/demo/verification/test_contract.py:14: AssertionError\n_____________________ test_real_workspace_function[9--3-6] _____________________\n\na = 9, b = -3, expected = 6\n\n    @pytest.mark.parametrize(\"a,b,expected\", [(2, 3, 5), (-2, 3, 1), (0, 0, 0), (9, -3, 6)])\n    def test_real_workspace_function(a: int, b: int, expected: int) -> None:\n        namespace = runpy.run_path(\"/workspace/demo_math.py\")\n>       assert namespace[\"add\"](a, b) == expected\nE       assert 12 == 6\nE        +  where 12 = <function add at 0x7566b5e26e80>(9, -3)\n\n/app/demo/verification/test_contract.py:14: AssertionError\n=========================== short test summary info ============================\nFAILED ../app/demo/verification/test_contract.py::test_real_workspace_function[2-3-5]\nFAILED ../app/demo/verification/test_contract.py::test_real_workspace_function[-2-3-1]\nFAILED ../app/demo/verification/test_contract.py::test_real_workspace_function[9--3-6]\n",
+            "stderr": "",
+            "duration_seconds": 1.5721637359999932,
+            "findings": [
+              "FF.F...                                                                  [100%]",
+              "=================================== FAILURES ===================================",
+              "_____________________ test_real_workspace_function[2-3-5] ______________________",
+              "a = 2, b = 3, expected = 5",
+              "@pytest.mark.parametrize(\"a,b,expected\", [(2, 3, 5), (-2, 3, 1), (0, 0, 0), (9, -3, 6)])",
+              "def test_real_workspace_function(a: int, b: int, expected: int) -> None:",
+              "namespace = runpy.run_path(\"/workspace/demo_math.py\")",
+              ">       assert namespace[\"add\"](a, b) == expected",
+              "E       assert -1 == 5",
+              "E        +  where -1 = <function add at 0x7566b5e25300>(2, 3)",
+              "/app/demo/verification/test_contract.py:14: AssertionError",
+              "_____________________ test_real_workspace_function[-2-3-1] _____________________",
+              "a = -2, b = 3, expected = 1",
+              "@pytest.mark.parametrize(\"a,b,expected\", [(2, 3, 5), (-2, 3, 1), (0, 0, 0), (9, -3, 6)])",
+              "def test_real_workspace_function(a: int, b: int, expected: int) -> None:",
+              "namespace = runpy.run_path(\"/workspace/demo_math.py\")",
+              ">       assert namespace[\"add\"](a, b) == expected",
+              "E       assert -5 == 1",
+              "E        +  where -5 = <function add at 0x7566b5e26980>(-2, 3)",
+              "/app/demo/verification/test_contract.py:14: AssertionError",
+              "_____________________ test_real_workspace_function[9--3-6] _____________________",
+              "a = 9, b = -3, expected = 6",
+              "@pytest.mark.parametrize(\"a,b,expected\", [(2, 3, 5), (-2, 3, 1), (0, 0, 0), (9, -3, 6)])",
+              "def test_real_workspace_function(a: int, b: int, expected: int) -> None:",
+              "namespace = runpy.run_path(\"/workspace/demo_math.py\")",
+              ">       assert namespace[\"add\"](a, b) == expected",
+              "E       assert 12 == 6",
+              "E        +  where 12 = <function add at 0x7566b5e26e80>(9, -3)",
+              "/app/demo/verification/test_contract.py:14: AssertionError",
+              "=========================== short test summary info ============================",
+              "FAILED ../app/demo/verification/test_contract.py::test_real_workspace_function[2-3-5]",
+              "FAILED ../app/demo/verification/test_contract.py::test_real_workspace_function[-2-3-1]",
+              "FAILED ../app/demo/verification/test_contract.py::test_real_workspace_function[9--3-6]"
+            ],
+            "evidence_hash": "367080952041ff656d6881ff85d4d5c34da5767862ee34dfea73cec7c6176df8"
+          },
+          {
+            "name": "lint",
+            "status": "passed",
+            "argv": [
+              "ruff",
+              "check",
+              "--no-cache",
+              "demo_math.py"
+            ],
+            "exit_code": 0,
+            "stdout": "All checks passed!\n",
+            "stderr": "",
+            "duration_seconds": 0.3913521919998857,
+            "findings": [],
+            "evidence_hash": "0eba7a3769b5b99251becfe3d1635076fface0a0ee4bae43bf36ad680074a624"
+          },
+          {
+            "name": "typecheck",
+            "status": "passed",
+            "argv": [
+              "mypy",
+              "--cache-dir=/tmp/mypy",
+              "demo_math.py"
+            ],
+            "exit_code": 0,
+            "stdout": "Success: no issues found in 1 source file\n",
+            "stderr": "",
+            "duration_seconds": 2.277944848000061,
+            "findings": [],
+            "evidence_hash": "2f7681eb2aa2a47dfd9ecf2bcc23f1d1b1f00f117921d0fecf818380115d9c76"
+          },
+          {
+            "name": "semgrep",
+            "status": "passed",
+            "argv": [
+              "semgrep",
+              "--config",
+              "semgrep.yml",
+              "--error",
+              "--metrics=off",
+              "--include",
+              "*.py",
+              "src",
+              "tests",
+              "scripts",
+              "demo"
+            ],
+            "exit_code": 0,
+            "stdout": "               \n               \n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 Scan Status \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n  Scanning 52 files tracked by git with 5 Code rules:\n  Scanning 52 files with 5 python rules.\n                \n                \n\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 Scan Summary \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n\u2705 Scan completed successfully.\n \u2022 Findings: 0 (0 blocking)\n \u2022 Rules run: 5\n \u2022 Targets scanned: 52\n \u2022 Parsed lines: ~100.0%\n \u2022 Scan skipped: \n   \u25e6 Not matching --include patterns: 1\n \u2022 For a detailed list of skipped files and lines, run semgrep with the --verbose flag\nRan 5 rules on 52 files: 0 findings.\n",
+            "stderr": "",
+            "duration_seconds": 4.092443409999987,
+            "findings": [],
+            "evidence_hash": "b7d11f35a1dabf1c4531f54350a8da8c9b87166fada598be0a9dc25fc3ad801a"
+          },
+          {
+            "name": "gitleaks",
+            "status": "passed",
+            "argv": [
+              "gitleaks-scan",
+              "detect",
+              "--no-banner",
+              "--redact",
+              "--config",
+              ".gitleaks.toml",
+              "--gitleaks-ignore-path",
+              "."
+            ],
+            "exit_code": 0,
+            "stdout": "\u001b[90m10:34PM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1mUnknown SCM platform. Use --platform to include links in findings.\u001b[0m \u001b[36mhost=\u001b[0m\n\u001b[90m10:34PM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1m47 commits scanned.\u001b[0m\n\u001b[90m10:34PM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1mscanned ~1108752 bytes (1.11 MB) in 499ms\u001b[0m\n\u001b[90m10:34PM\u001b[0m \u001b[32mINF\u001b[0m \u001b[1mno leaks found\u001b[0m\n",
+            "stderr": "",
+            "duration_seconds": 1.2713335649998498,
+            "findings": [],
+            "evidence_hash": "a407162cf5d7cb816282ff5e53ecb55e1fab4110189bf88b749275ede5cc30b4"
+          }
+        ],
+        "evidence_hash": "87dcdac2bd2d8af4473ccd42844d78d43e6900684c066ab9e7aa960fd87a31d5"
+      },
+      "review": null
+    }
+  },
+  "authentication": "401 unauthenticated; 403 developer approval/admin controls",
+  "kill_switch": "admin-only durable switch denied new tasks",
+  "durability": "same result and evidence hash survived API process restart",
+  "audit_chain": "verified across API and worker events",
+  "finished_at": "2026-11-17T22:34:13.372197+00:00",
+  "data_retained": true
+}
