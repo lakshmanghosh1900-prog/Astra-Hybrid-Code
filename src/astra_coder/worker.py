@@ -160,7 +160,7 @@ class DockerVerificationRunner:
             timeout_seconds = min(timeout_seconds, self._remaining_seconds())
         try:
             request = self._adapter.request(argv, cwd, timeout_seconds)
-            if Path(argv[0]).name in {"gitleaks", "gitleaks.exe"}:
+            if Path(argv[0]).name in {"gitleaks", "gitleaks.exe", "gitleaks-scan"}:
                 request = request.model_copy(
                     update={
                         "git_metadata_subpath": _git_metadata_subpath(

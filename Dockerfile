@@ -26,8 +26,9 @@ RUN python -m pip install --timeout=120 --retries=5 -r requirements.lock \
     && tar -xzf /tmp/gitleaks.tar.gz -C /usr/local/bin gitleaks \
     && rm -f /tmp/gitleaks.tar.gz
 COPY . .
-
-RUN useradd --create-home --uid 10001 astra \
+COPY scripts/gitleaks-scan.sh /usr/local/bin/gitleaks-scan
+RUN chmod 755 /usr/local/bin/gitleaks-scan \
+    && useradd --create-home --uid 10001 astra \
     && mkdir -p /data \
     && chown 10001:10001 /data
 USER astra

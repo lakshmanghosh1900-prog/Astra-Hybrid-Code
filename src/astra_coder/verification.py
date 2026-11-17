@@ -118,7 +118,10 @@ def default_gates() -> tuple[GateSpec, ...]:
         GateSpec(name=GateName.LINT, argv=("ruff", "check", "src", "tests")),
         GateSpec(name=GateName.TYPECHECK, argv=("mypy", "src")),
         GateSpec(name=GateName.SEMGREP, argv=("semgrep", "--config", "semgrep.yml", "--error")),
-        GateSpec(name=GateName.GITLEAKS, argv=("gitleaks", "detect", "--no-banner", "--redact")),
+        GateSpec(
+            name=GateName.GITLEAKS,
+            argv=("gitleaks-scan", "detect", "--no-banner", "--redact"),
+        ),
     )
 
 

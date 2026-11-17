@@ -219,7 +219,7 @@ def test_named_volume_exposes_only_task_subpath(tmp_path: Path, read_only: bool)
 def test_git_metadata_is_mounted_read_only_for_scanner_gates(tmp_path: Path) -> None:
     request = SandboxRequest(
         image="astra:test",
-        argv=["gitleaks", "detect", "--no-banner"],
+        argv=["gitleaks-scan", "detect", "--no-banner"],
         workspace=tmp_path,
         workspace_volume="astra_repos",
         volume_subpath=".repo.astra-worktrees/task-123",
@@ -231,7 +231,7 @@ def test_git_metadata_is_mounted_read_only_for_scanner_gates(tmp_path: Path) -> 
     assert mounts == [
         "--mount=type=volume,src=astra_repos,dst=/workspace,"
         "volume-subpath=.repo.astra-worktrees/task-123,volume-nocopy,readonly",
-        "--mount=type=volume,src=astra_repos,dst=/workspace/.git,"
+        "--mount=type=volume,src=astra_repos,dst=/git-metadata,"
         "volume-subpath=repo/.git,volume-nocopy,readonly",
     ]
 

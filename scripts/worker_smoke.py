@@ -67,7 +67,7 @@ SECURITY_GATES = (
     {
         "name": "gitleaks",
         "argv": [
-            "gitleaks",
+            "gitleaks-scan",
             "detect",
             "--no-banner",
             "--redact",

@@ -132,14 +132,14 @@ def test_gitleaks_gate_mounts_read_only_git_metadata(tmp_path: Path) -> None:
         volume_root=tmp_path,
     )
     engine = VerificationEngine(
-        verifier, (GateSpec(name=GateName.GITLEAKS, argv=("gitleaks", "detect")),)
+        verifier, (GateSpec(name=GateName.GITLEAKS, argv=("gitleaks-scan", "detect")),)
     )
 
     assert engine.run(repo).passed
     assert runner.argv is not None
-    assert any("dst=/workspace/.git" in part for part in runner.argv)
+    assert any("dst=/git-metadata" in part for part in runner.argv)
     assert any("volume-subpath=repo/.git" in part for part in runner.argv)
-    assert any("dst=/workspace/.git" in part and ",readonly" in part for part in runner.argv)
+    assert any("dst=/git-metadata" in part and ",readonly" in part for part in runner.argv)
 
 
 def test_docker_orchestrator_factory_injects_sandboxed_commands(tmp_path: Path) -> None:

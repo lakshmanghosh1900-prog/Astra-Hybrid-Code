@@ -154,7 +154,7 @@ class DockerSandbox:
             if request.workspace_volume is None:
                 raise ValueError("git_metadata_subpath requires workspace_volume")
             mounts.append(
-                f"--mount=type=volume,src={request.workspace_volume},dst=/workspace/.git,"
+                f"--mount=type=volume,src={request.workspace_volume},dst=/git-metadata,"
                 f"volume-subpath={request.git_metadata_subpath},volume-nocopy,readonly"
             )
         return (
