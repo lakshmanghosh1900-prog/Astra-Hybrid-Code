@@ -129,6 +129,7 @@ def main() -> None:
     env.update(
         {
             "ASTRA_AUTH_MODE": "tokens",
+            "ASTRA_WORKER_PLAN_MODE": "structured",
             "ASTRA_AUTH_TOKENS": json.dumps(
                 {token: {"actor_id": role, "role": role} for role, token in tokens.items()}
             ),
