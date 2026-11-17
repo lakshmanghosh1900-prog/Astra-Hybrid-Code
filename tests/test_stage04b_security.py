@@ -334,6 +334,7 @@ def test_configured_secret_values_are_redacted() -> None:
     redactor = SecretRedactor(settings.secret_values())
     assert redactor.redact(f"key={dummy}") == f"key={REDACTED}"
 
+
 def test_network_deny_blocks_gateway_before_provider_call() -> None:
     provider = CaptureProvider([response()])
     gateway = ModelGateway(
@@ -382,9 +383,7 @@ def test_network_allow_emits_complete_audit_event() -> None:
     )
     runner.complete(ModelRequest(prompt="implement", required_tier=ModelTier.T1))
     allow_events = [
-        event
-        for event in events
-        if event[1] == "network_decision" and event[3] == "allow"
+        event for event in events if event[1] == "network_decision" and event[3] == "allow"
     ]
     assert allow_events
     metadata = allow_events[0][4]
@@ -499,9 +498,7 @@ def test_secret_redaction_blocks_aws_github_and_private_key_everywhere() -> None
         redactor=redactor,
         audit_sink=sink,
     )
-    runner.complete(
-        ModelRequest(prompt=rendered, required_tier=ModelTier.T1, max_output_tokens=16)
-    )
+    runner.complete(ModelRequest(prompt=rendered, required_tier=ModelTier.T1, max_output_tokens=16))
     sent = provider.prompts[0]
     for secret in (aws, github, private_key):
         assert secret not in sent
@@ -608,9 +605,9 @@ def test_eligible_specs_and_generate_share_one_classification() -> None:
     )
     effective = gateway.effective_tier(request)
     assert gateway.eligible_specs(request) == gateway.candidate_plan(request)[0]
-    assert gateway.eligible_specs(request, effective) == gateway.candidate_plan(
-        request, effective
-    )[0]
+    assert (
+        gateway.eligible_specs(request, effective) == gateway.candidate_plan(request, effective)[0]
+    )
     assert [spec.provider for spec in gateway.eligible_specs(request)] == ["nvidia_nim"]
 
 

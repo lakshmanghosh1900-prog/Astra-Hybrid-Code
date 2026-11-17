@@ -72,9 +72,7 @@ def validate_cascade_order(order: tuple[str, ...]) -> tuple[str, ...]:
         raise ValueError("free cascade order must not contain duplicate providers")
     unknown = sorted(set(order) - set(FREE_CASCADE_ORDER))
     if unknown:
-        raise ValueError(
-            "free cascade order contains unknown providers: " + ", ".join(unknown)
-        )
+        raise ValueError("free cascade order contains unknown providers: " + ", ".join(unknown))
     return order
 
 

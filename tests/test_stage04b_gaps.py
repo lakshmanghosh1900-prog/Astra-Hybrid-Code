@@ -157,7 +157,10 @@ def runner_for(
 ) -> BudgetRunner:
     actor = Actor(actor_id="op", role="operator")
     resolved_authorizer = authorizer or NetworkAuthorizer(
-        policy, actor, sink, allow_remote_t4=True  # type: ignore[arg-type]
+        policy,
+        actor,
+        sink,
+        allow_remote_t4=True,  # type: ignore[arg-type]
     )
     kwargs = {"task_id": task_id, "started_at": started_at}
     if clock is not None:
@@ -311,9 +314,7 @@ def test_budget_runner_records_then_denies_actual_task_overrun() -> None:
     current = task(max_tokens=20)
     runner = runner_for(gateway, PolicyEngine(), current, sink)
     with pytest.raises(BudgetExceeded, match="task token limit"):
-        runner.complete(
-            ModelRequest(prompt="x", required_tier=ModelTier.T1, max_output_tokens=5)
-        )
+        runner.complete(ModelRequest(prompt="x", required_tier=ModelTier.T1, max_output_tokens=5))
     assert provider.calls == 1
     assert current.tokens == 100
     assert any(event[1] == "budget_denied" for event in events)
@@ -422,9 +423,7 @@ def test_record_remote_approval_requires_forward_expiry() -> None:
     operator = Actor(actor_id="op", role="operator")
     now = datetime.now(UTC)
     with pytest.raises(PolicyDenied, match="expiry"):
-        policy.record_remote_approval(
-            operator, _approval(operator, created_at=now, expires_at=now)
-        )
+        policy.record_remote_approval(operator, _approval(operator, created_at=now, expires_at=now))
 
 
 def test_revoke_remote_approval_removes_record() -> None:
@@ -445,15 +444,11 @@ def test_remote_approval_rejects_hash_mismatch() -> None:
     )
     now = datetime.now(UTC)
     assert (
-        policy.remote_approval(
-            "task-1", "nvidia_nim", now=now, paid=False, spec_hash="spec-b"
-        )
+        policy.remote_approval("task-1", "nvidia_nim", now=now, paid=False, spec_hash="spec-b")
         is None
     )
     assert (
-        policy.remote_approval(
-            "task-1", "nvidia_nim", now=now, paid=False, scope_hash="scope-b"
-        )
+        policy.remote_approval("task-1", "nvidia_nim", now=now, paid=False, scope_hash="scope-b")
         is None
     )
     assert (
@@ -499,9 +494,7 @@ def test_evaluate_rejects_negative_estimate_and_budget_overrun() -> None:
 def test_path_guard_rejects_missing_root_for_mutation(tmp_path: Path) -> None:
     policy = PolicyEngine(PolicyConfig(repo_root=tmp_path / "missing"))
     admin = Actor(actor_id="admin", role="admin")
-    decision = policy.evaluate(
-        admin, Action.EDIT, RiskTier.T0, "task", touched_paths=["a.py"]
-    )
+    decision = policy.evaluate(admin, Action.EDIT, RiskTier.T0, "task", touched_paths=["a.py"])
     assert not decision.allowed
     assert "root is unavailable" in decision.reason
 
@@ -521,9 +514,7 @@ def test_path_guard_resolves_relative_paths(tmp_path: Path) -> None:
     root.mkdir()
     policy = PolicyEngine(PolicyConfig(repo_root=root))
     developer = Actor(actor_id="dev", role="developer")
-    decision = policy.evaluate(
-        developer, Action.READ, RiskTier.T0, "task", touched_paths=["a.py"]
-    )
+    decision = policy.evaluate(developer, Action.READ, RiskTier.T0, "task", touched_paths=["a.py"])
     assert decision.allowed
 
 
@@ -541,9 +532,7 @@ def test_network_authorizer_allows_operator_for_free_remote() -> None:
     operator = Actor(actor_id="op", role="operator")
     events, sink = sink_events()
     authorizer = NetworkAuthorizer(policy, operator, sink, allow_remote_t4=False)
-    allowed = authorizer.authorize(
-        task(), [spec()], estimated_tokens=5, estimated_cost=0.0
-    )
+    allowed = authorizer.authorize(task(), [spec()], estimated_tokens=5, estimated_cost=0.0)
     assert spec_key(spec()) in allowed
     assert any(event[1] == "network_decision" and event[3] == "allow" for event in events)
 
