@@ -69,7 +69,7 @@ Status: Stage 16 CLOSED PASS WITH QUALIFICATIONS — Operator Signed Off for v1.
 
 ---
 
-## 7. v1.0.1 — Stage 04b (free cascade) qualification (updated after real CI)
+## 7. v1.0.1 — Stage 04b (free cascade) qualification (CERTIFIED)
 
 This section covers ONLY the v1.0.1 Stage 04b work on `feat/v1.0.1-free-cascade`; it does not alter
 the v1.0.0 sign-off above.
@@ -77,25 +77,26 @@ the v1.0.0 sign-off above.
 - Branch: `feat/v1.0.1-free-cascade`; base `main` @ `30be0c025be7f786f5763cb2085f44cada38f812`.
 - Protected report `reports/worker-smoke.json`:
   `3045C669207D0ADDCDF117EA37B6CBF82E595C67FA6AAAD018B3B6645326D5D8` (unchanged).
-- Commits: `72fd7a1` Stage 04b wired, `d66f7ba` CI runner pin to ubuntu-24.04, `d89449a` CI format fix.
+- Commits: `72fd7a1` Stage 04b wired, `d66f7ba` CI runner pin to ubuntu-24.04, `d89449a` CI format fix,
+  `cf47246` gitleaks allowlist, `98f4e06` FINAL_REPORT update with RUN 44154077310.
 - Tests: local PASS 328 passed, 2 skipped (`pytest.log`, `--strict-markers`). CI `make test`: 330 passed.
 - Coverage: total 86.95%; free_cascade 99%; gateway 88%; policy 98% (`coverage.xml`).
-- ruff / mypy: PASS in local and in CI (0 findings).
-- ruff format: PASS in CI after `d89449a` (50 files formatted).
+- ruff / mypy / format: PASS in local and in CI (0 findings, 50 files formatted).
 - semgrep: PASS in CI, 0 findings / 29 targets, 2 rules.
-- gitleaks: FAIL in CI RUN 44154077310, leaks found: 2. Both are PRE-EXISTING in base `30be0c0`,
-  in `reports/d54-dockerfile-verify-20261025.md`, generic-api-key on Docker image IDs, container IDs
-  and SHA-256 verification hashes. None are in Stage 04b diff. Stage 04b committed files: 0 leaks.
-  Fix applied: narrow allowlist in `.gitleaks.toml` for that one report file only, with written
-  justification. No redaction of D5.4 evidence, no history rewrite, no whole-repo allowlist.
+- gitleaks: PASS in CI RUN 44155145765, `no leaks found`. The 2 earlier findings were PRE-EXISTING in
+  base `30be0c0`, in `reports/d54-dockerfile-verify-20261025.md`, generic-api-key on Docker image IDs,
+  container IDs and SHA-256 verification hashes at lines 38 and 117. None were in Stage 04b diff.
+  Fix: narrow allowlist in `.gitleaks.toml` for that one report file only, with written justification.
+  No redaction of D5.4 evidence, no history rewrite, no whole-repo allowlist.
 - Security: NETWORK evaluated before gateway; T4 recorded approval; secret redaction; mandatory
   audit sink; TaskLimits preflight; global OpenRouter `:free` invariant; startup cascade validation.
-- Gates: G1 PASS, G2 PASS, G3 PASS, G4 PASS, G5 PARTIAL, local PASS, semgrep PASS in CI, gitleaks
-  pending re-verify after allowlist.
+- Gates: G1 PASS, G2 PASS, G3 PASS, G4 PASS, G5 PASS.
 - CI evidence:
     - RUN 44152068725: FAIL, setup-python, Python 3.12.2 not found for Ubuntu 26.04, infra issue.
-    - RUN 44153277996: FAIL, make format, Makefile:18, exit 2, formatting differences.
+    - RUN 44153277996: FAIL, make format, Makefile:18, exit 2.
     - RUN 44154077310: FAIL, 7 of 8 steps PASS, only gitleaks FAIL on 2 pre-existing leaks above.
-- Status: pushed, 7 of 8 CI steps PASS, NOT CERTIFIED yet.
-- Final verdict is recorded in docs/stages/04b.md after full CI PASS; do not treat v1.0.1 as certified
-  until a real CI run shows test plus lint plus format plus typecheck plus semgrep plus gitleaks all PASS.
+    - RUN 44155145765: SUCCESS, 1m12s, full CI PASS, test plus lint plus format plus typecheck plus
+    semgrep plus gitleaks all PASS. This is the certifying run.
+- Status: pushed, full CI PASS, CERTIFIED on feat branch.
+- Final verdict is recorded in docs/stages/04b.md. v1.0.1 is NOT merged to main, NOT tagged, NOT deployed
+  in this report. Merge, tag and deploy need separate explicit approval.
