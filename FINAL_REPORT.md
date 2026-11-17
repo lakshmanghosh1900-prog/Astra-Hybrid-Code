@@ -66,3 +66,26 @@ Pinned toolchains used:
 
 ---
 Status: Stage 16 CLOSED PASS WITH QUALIFICATIONS — Operator Signed Off for v1.0.0 Release (KF-1 deferred to v1.0.1; Stage 04b/05b scoped to post-v1.0.0).
+
+---
+
+## 7. v1.0.1 — Stage 04b (free cascade) qualification (working tree, pending push)
+
+This section covers ONLY the v1.0.1 Stage 04b work on `feat/v1.0.1-free-cascade`; it does not alter
+the v1.0.0 sign-off above.
+
+- Branch: `feat/v1.0.1-free-cascade`; base `main` @ `30be0c025be7f786f5763cb2085f44cada38f812`.
+- Protected report `reports/worker-smoke.json`:
+  `3045C669207D0ADDCDF117EA37B6CBF82E595C67FA6AAAD018B3B6645326D5D8` (unchanged).
+- Tests: PASS 328 passed, 2 skipped (`pytest.log`, `--strict-markers`).
+- Coverage: total 86.95%; free_cascade 99%; gateway 88%; policy 98% (`coverage.xml`).
+- ruff / mypy: PASS (0 findings).
+- semgrep: PASS, 0 findings / 29 targets (`semgrep.log`).
+- gitleaks: 2 findings, both PRE-EXISTING in base commit `30be0c0`
+  (`reports/d54-dockerfile-verify-20261025.md`, a Docker verification image tag), none in this
+  diff (`gitleaks-findings.json`). Not hidden; out of Stage 04b scope.
+- Security: NETWORK evaluated before gateway; T4 recorded approval; secret redaction; mandatory
+  audit sink; TaskLimits preflight; global OpenRouter `:free` invariant; startup cascade validation.
+- Status: implemented + wired, one reviewed commit prepared, NOT pushed, real CI pending.
+- Final verdict is recorded in docs/stages/04b.md after push/CI; do not treat v1.0.1 as certified
+  until real CI passes on the pushed branch.

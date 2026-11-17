@@ -6,6 +6,7 @@ import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -14,6 +15,9 @@ from .git_safety import GitSafety, GitSafetyError
 from .persistence import AuditEvent, AuditLog, PersistenceError, StateStore, TaskScope
 from .policy import Action, Actor, PolicyDenied, PolicyEngine, Role
 from .runtime import TERMINAL_STATES, RiskTier, Task, TaskState, TaskStateMachine
+
+if TYPE_CHECKING:
+    from .gateway import ModelGateway
 
 
 class ServiceError(RuntimeError):
@@ -32,10 +36,12 @@ class TaskService:
         store: StateStore,
         policy: PolicyEngine,
         audit: AuditLog | None = None,
+        gateway: ModelGateway | None = None,
     ) -> None:
         self.store = store
         self.policy = policy
         self.audit = audit or AuditLog(store)
+        self.gateway = gateway
         self._sync_kill_switch()
         for approval in store.approvals():
             task = store.get_task(approval.task_id)

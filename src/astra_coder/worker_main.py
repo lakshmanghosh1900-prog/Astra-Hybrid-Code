@@ -12,12 +12,15 @@ from pathlib import Path
 from threading import Event
 
 from .agents import ArchitectAgent, EditorAgent, IndependentReviewerAgent, Plan
-from .config import load_settings
+from .config import Settings, load_settings
+from .free_cascade import CascadePlanBuilder, build_free_cascade_gateway
 from .persistence import AuditLog, StateStore
 from .policy import Actor, PolicyConfig, PolicyEngine
+from .redaction import SecretRedactor
 from .runtime import Task
 from .sandbox import DockerSandbox
 from .sandbox_tools import SandboxToolCall, validate_tool_call
+from .security import AuditSink
 from .verification import GateSpec, default_gates
 from .worker import DockerOrchestratorFactory, GitWorktreeFactory, PolicyExecutionGuard, TaskWorker
 
@@ -30,6 +33,29 @@ def structured_plan(task: Task, context: str) -> Plan:
         call = SandboxToolCall.model_validate({"tool": step.tool, "arguments": step.payload})
         validate_tool_call(call)
     return plan
+
+
+def build_architect(
+    settings: Settings,
+    policy: PolicyEngine,
+    actor: Actor,
+    audit_sink: AuditSink,
+) -> ArchitectAgent:
+    """Build the default free-cascade planner; structured JSON is an explicit fallback."""
+    if settings.worker_plan_mode == "structured":
+        return ArchitectAgent(structured_plan)
+    gateway = build_free_cascade_gateway(settings)
+    return ArchitectAgent(
+        CascadePlanBuilder(
+            gateway=gateway,
+            policy=policy,
+            actor=actor,
+            audit_sink=audit_sink,
+            redactor=SecretRedactor(settings.secret_values()),
+            allow_remote_t4=settings.allow_remote_t4,
+            allow_paid_remote=settings.allow_paid_remote,
+        )
+    )
 
 
 def configured_gates(raw: str | None) -> tuple[GateSpec, ...]:
@@ -73,13 +99,22 @@ def main() -> int:
         audit = AuditLog(store)
         worker_id = "compose-worker"
         store.recover_worker_after_restart(audit, worker_id)
-        guard = PolicyExecutionGuard(
-            store,
-            PolicyEngine(PolicyConfig(repo_root=settings.repo_root)),
-            Actor(actor_id=worker_id, role="developer"),
-        )
+        policy = PolicyEngine(PolicyConfig(repo_root=settings.repo_root))
+        worker_actor = Actor(actor_id=worker_id, role=settings.worker_role)
+
+        def audit_sink(
+            actor_id: str,
+            action: str,
+            target: str,
+            decision: str,
+            metadata: dict[str, object],
+        ) -> object:
+            return audit.append(actor_id, action, target, decision, metadata)
+
+        architect = build_architect(settings, policy, worker_actor, audit_sink)
+        guard = PolicyExecutionGuard(store, policy, worker_actor)
         factory = DockerOrchestratorFactory(
-            ArchitectAgent(structured_plan),
+            architect,
             EditorAgent(),
             IndependentReviewerAgent(),
             image,

@@ -1,18 +1,61 @@
 # Stage 04b — Free-Cascade Model Gateway: Architecture & Integration Contract
 
-Status: **design only, not implemented**
+Status: **implemented + wired in working tree (Phase 1-3, 5, 6 complete), pending reviewed commit; NOT pushed; certification pending final governance — see docs/stages/04b.md**
 Branch: `feat/v1.0.1-free-cascade`
 Base: `main` @ `30be0c025be7f786f5763cb2085f44cada38f812`
-Tag baseline: `v1.0.0` @ `7bfd5f538ac913d6b5fb80cfc76073b7689cc4e6`
+Tag baseline: `v1.0.0` @ `30be0c025be7f786f5763cb2085f44cada38f812`
 Stage HEAD at authoring: `43439cad69fd6af9b9fb2b68a97b48c8de9b7daf`
 
-This document is the reviewable contract for the post-v1.0.0 free-tier cascade work. It contains no
-Stage 04b implementation code. No source, test, config, environment file, report, or lockfile is
-changed by this stage. Nothing is pushed. `main` and `v1.0.0` are untouched.
+This document is the reviewable contract for the post-v1.0.0 free-tier cascade work. Stage 04b is
+now implemented and wired in the working tree; implementation, config, tests, and evidence live in
+the companion files listed in docs/stages/04b.md. Nothing is pushed. `main` and `v1.0.0` are
+untouched.
 
 Canonical source: Report B structure + 12 conflict rulings (Appendix A) + 4 locked operator
 decisions (Section 10, D-1..D-4). Where Report A and Report B diverged, Appendix A is authoritative.
 Rejected alternatives in Section 10.3 must not be reintroduced.
+
+---
+
+## 0.0 Stage 04b security hardening (post-review implementation notes)
+
+The following controls are now implemented and enforced in code. The 12 conflict rulings in
+Appendix A and the 4 locked operator decisions D-1..D-4 in Section 10 remain **locked and
+unchanged**; nothing in this section alters them.
+
+- **NETWORK evaluation point (Phase 1A).** `Action.NETWORK` is evaluated by `PolicyEngine.evaluate()`
+  in `NetworkAuthorizer.authorize()` (`src/astra_coder/security.py`) at the worker boundary, invoked
+  by `BudgetRunner.complete()` (`src/astra_coder/free_cascade.py`) **before** `ModelGateway.generate()`.
+  A deny is fail-closed: no provider call, an audited `network_decision=deny` event, and no fallback.
+  Production gateways are built with `require_network_authorization=True`, so `generate()` called
+  without an `allowed_keys` decision raises `NetworkAuthorizationRequired`.
+- **T4 recorded approval (Phase 1B).** `ASTRA_ALLOW_REMOTE_T4=true` is a flag, not an approval. Remote
+  T4 also requires a `RemoteApproval` object carrying `approval_id`, `approver`, `task_id`,
+  `provider`, `created_at`, `expires_at`, `paid`. Missing, expired, or task-mismatched approvals deny.
+  Each decision (with approval id) is written to the audit sink.
+- **Paid provider permission (Phase 1C).** `ASTRA_ALLOW_PAID_REMOTE=true` still requires the provider
+  to be `paid_authorized`, an `Action.SECRETS` grant, and an explicit paid `RemoteApproval`. Default
+  `false` stays fail-closed.
+- **Secret redaction (Phase 1D).** `SecretRedactor` (denylist + regex + configured env values) is
+  applied to the prompt and to repo/task context in `_render_prompt()` before any remote send. Secrets
+  never reach the provider mock, the audit prompt field, logs, or errors.
+- **Mandatory audit sink (Phase 1E / Gap C).** Every gateway decision emits provider, model,
+  decision, reason, skip_reason, budget, tokens, approval id, actor, and task id. The production
+  composition fails closed when the audit sink is absent (`NetworkAuthorizer` and `BudgetRunner`
+  both reject a `None` sink).
+- **Kill switch (Phase 1F).** `PolicyEngine` kill switch blocks `Action.NETWORK` at the authorizer,
+  not only local actions.
+- **TaskLimits preflight (Gap A).** `BudgetRunner.complete()` enforces `TaskLimits.max_tokens` and
+  wall-clock budget before any provider call, raising `BudgetExceeded` with an audited deny.
+- **Single classification (Gap B).** `eligible_specs()` and `generate()`/`candidate_plan()` share one
+  tier/free/context/breaker classifier.
+- **Cascade order validation (Gap F).** `ASTRA_FREE_CASCADE_ORDER` is validated at startup; empty,
+  duplicate, or unknown providers raise `ValueError` fail-closed (no silent default).
+- **OpenRouter global invariant (Gap G).** Registration and selection reject any non-`:free`
+  OpenRouter model regardless of `free_tier`/`free_only`/`allow_paid_remote` flags unless an explicitly
+  `paid_authorized` spec is combined with NETWORK + SECRETS + explicit paid approval. The free path
+  enforces the `:free` suffix in `is_free_qualified()` and `skip_reason()`. The `ASTRA_OPENROUTER_FREE_ONLY`
+  toggle was removed (see Section 10 env table).
 
 ---
 
@@ -453,7 +496,7 @@ cost is non-zero in Stage 04b free-only mode.
 | `ASTRA_FREE_CASCADE_ORDER` | Comma-separated hop override | `ollama,nvidia_nim,openrouter,groq` | no |
 | `ASTRA_ALLOW_PAID_REMOTE` | Enable paid remote | `false` | no |
 | `ASTRA_ALLOW_REMOTE_T4` | Allow remote for T4 | `false` | no |
-| `ASTRA_OPENROUTER_FREE_ONLY` | Reject non-`:free` OpenRouter models | `true` | no |
+| ASTRA_OPENROUTER_FREE_ONLY | Removed - OpenRouter always :free in Stage 04b, no toggle | n/a | no |
 | `ASTRA_REMOTE_TIMEOUT_SECONDS` | Per-request remote timeout | `60` | no |
 | `ASTRA_RETRY_BACKOFF_SECONDS` | Bounded retry backoff base | `0.5` (tests inject `0`) | no |
 

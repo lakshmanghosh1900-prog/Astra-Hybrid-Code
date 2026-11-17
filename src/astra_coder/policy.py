@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from threading import RLock
 
@@ -45,6 +45,27 @@ class Actor(BaseModel):
 class Usage(BaseModel):
     tokens: int = Field(default=0, ge=0)
     cost: float = Field(default=0.0, ge=0.0)
+
+
+class RemoteApproval(BaseModel):
+    """Task-specific, expiring approval for one remote provider hop.
+
+    This object authorizes a recorded human decision, not a role label supplied
+    by a model. ``paid`` must match the provider's pricing mode and ``provider``
+    must match the hop being called.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    approval_id: str = Field(min_length=1, max_length=128)
+    approver: str = Field(min_length=1, max_length=256)
+    task_id: str = Field(min_length=1, max_length=128)
+    provider: str = Field(min_length=1, max_length=64)
+    created_at: datetime
+    expires_at: datetime
+    paid: bool = False
+    spec_hash: str | None = None
+    scope_hash: str | None = None
 
 
 class PolicyConfig(BaseModel):
@@ -124,16 +145,27 @@ class _DayKey:
     day: date
 
 
+def _remote_key(task_id: str, provider: str) -> str:
+    return f"{task_id}/{provider}"
+
+
 class PolicyEngine:
     """Central policy decision point; no caller may bypass `evaluate`."""
 
-    def __init__(self, config: PolicyConfig | None = None) -> None:
+    def __init__(
+        self,
+        config: PolicyConfig | None = None,
+        *,
+        today: Callable[[], date] = date.today,
+    ) -> None:
         self.config = config or PolicyConfig()
         self._lock = RLock()
         self._task_usage: defaultdict[str, Usage] = defaultdict(Usage)
         self._daily_usage: defaultdict[_DayKey, Usage] = defaultdict(Usage)
         self._approvals: dict[str, tuple[str, str | None, str | None]] = {}
+        self._remote_approvals: dict[str, RemoteApproval] = {}
         self._kill_switch = False
+        self._today = today
 
     @property
     def kill_switch_enabled(self) -> bool:
@@ -169,6 +201,48 @@ class PolicyEngine:
         self._require(actor, Action.APPROVE)
         with self._lock:
             self._approvals.pop(task_id, None)
+
+    def record_remote_approval(self, actor: Actor, approval: RemoteApproval) -> None:
+        """Record a trusted, expiring remote-provider approval for one task hop."""
+        self._require(actor, Action.APPROVE)
+        if actor.role not in {Role.REVIEWER, Role.OPERATOR, Role.ADMIN}:
+            raise PolicyDenied("only a reviewer, operator, or admin can approve remote access")
+        if approval.approver != actor.actor_id:
+            raise PolicyDenied("remote approval approver must match the acting principal")
+        if approval.created_at.tzinfo is None or approval.expires_at.tzinfo is None:
+            raise PolicyDenied("remote approval timestamps must be timezone-aware")
+        if approval.expires_at <= approval.created_at:
+            raise PolicyDenied("remote approval expiry must be after creation")
+        with self._lock:
+            self._remote_approvals[_remote_key(approval.task_id, approval.provider)] = approval
+
+    def revoke_remote_approval(self, task_id: str, provider: str, actor: Actor) -> None:
+        self._require(actor, Action.APPROVE)
+        with self._lock:
+            self._remote_approvals.pop(_remote_key(task_id, provider), None)
+
+    def remote_approval(
+        self,
+        task_id: str,
+        provider: str,
+        *,
+        now: datetime,
+        paid: bool,
+        spec_hash: str | None = None,
+        scope_hash: str | None = None,
+    ) -> RemoteApproval | None:
+        """Return a matching, unexpired approval or ``None`` (fail closed)."""
+        with self._lock:
+            approval = self._remote_approvals.get(_remote_key(task_id, provider))
+        if approval is None or approval.expires_at <= now or approval.paid != paid:
+            return None
+        if spec_hash is not None and approval.spec_hash is not None:
+            if approval.spec_hash != spec_hash:
+                return None
+        if scope_hash is not None and approval.scope_hash is not None:
+            if approval.scope_hash != scope_hash:
+                return None
+        return approval
 
     def evaluate(
         self,
@@ -229,10 +303,34 @@ class PolicyEngine:
             current = self._task_usage[task_id]
             current.tokens += tokens
             current.cost += cost
-            daily = self._daily_usage[_DayKey(date.today())]
+            daily = self._daily_usage[_DayKey(self._today())]
             daily.tokens += tokens
             daily.cost += cost
             return current.model_copy(deep=True)
+
+    def can_afford(self, task_id: str, tokens: int, cost: float) -> str | None:
+        """Read-only pre-flight check; returns the first exceeded limit reason."""
+        if tokens < 0 or cost < 0:
+            return "negative budget estimate"
+        with self._lock:
+            return self._budget_error(task_id, tokens, cost)
+
+    def charge_usage(self, task_id: str, tokens: int, cost: float) -> Usage:
+        """Always record actual usage, then raise if a cumulative limit is exceeded."""
+        if tokens < 0 or cost < 0:
+            raise PolicyDenied("usage cannot be negative")
+        with self._lock:
+            current = self._task_usage[task_id]
+            current.tokens += tokens
+            current.cost += cost
+            daily = self._daily_usage[_DayKey(self._today())]
+            daily.tokens += tokens
+            daily.cost += cost
+            recorded = current.model_copy(deep=True)
+            error = self._recorded_budget_error(current, daily)
+            if error:
+                raise PolicyDenied(error)
+            return recorded
 
     def usage(self, task_id: str) -> Usage:
         with self._lock:
@@ -244,7 +342,7 @@ class PolicyEngine:
 
     def _budget_error(self, task_id: str, tokens: int, cost: float) -> str | None:
         task = self._task_usage[task_id]
-        daily = self._daily_usage[_DayKey(date.today())]
+        daily = self._daily_usage[_DayKey(self._today())]
         if task.tokens + tokens > self.config.per_task_tokens:
             return "per-task token budget exceeded"
         if task.cost + cost > self.config.per_task_cost:
@@ -252,6 +350,17 @@ class PolicyEngine:
         if daily.tokens + tokens > self.config.daily_tokens:
             return "daily token budget exceeded"
         if daily.cost + cost > self.config.daily_cost:
+            return "daily cost budget exceeded"
+        return None
+
+    def _recorded_budget_error(self, task: Usage, daily: Usage) -> str | None:
+        if task.tokens > self.config.per_task_tokens:
+            return "per-task token budget exceeded"
+        if task.cost > self.config.per_task_cost:
+            return "per-task cost budget exceeded"
+        if daily.tokens > self.config.daily_tokens:
+            return "daily token budget exceeded"
+        if daily.cost > self.config.daily_cost:
             return "daily cost budget exceeded"
         return None
 

@@ -10,6 +10,7 @@ import typer
 
 from . import __version__
 from .config import load_settings
+from .free_cascade import build_free_cascade_gateway
 from .persistence import AuditLog, StateStore
 from .policy import Actor, PolicyConfig, PolicyEngine
 from .runtime import RiskTier, Task
@@ -23,7 +24,13 @@ def service() -> TaskService:
     store = StateStore(settings.database_url)
     audit = AuditLog(store)
     store.recover_after_restart(audit)
-    return TaskService(store, PolicyEngine(PolicyConfig(repo_root=settings.repo_root)), audit)
+    policy = PolicyEngine(PolicyConfig(repo_root=settings.repo_root))
+    return TaskService(
+        store,
+        policy,
+        audit,
+        gateway=build_free_cascade_gateway(settings),
+    )
 
 
 def actor(role: str | None = None) -> Actor:
