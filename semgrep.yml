@@ -12,3 +12,31 @@ rules:
     pattern-either:
       - pattern: eval(...)
       - pattern: exec(...)
+  - id: no-os-system
+    languages: [python]
+    message: Do not use os.system; commands must use argv and a policy-checked runner.
+    severity: ERROR
+    pattern: os.system(...)
+  - id: no-unsafe-deserialization
+    languages: [python]
+    message: Unsafe deserialization is prohibited in Astra core.
+    severity: ERROR
+    pattern-either:
+      - pattern: pickle.loads(...)
+      - pattern: pickle.load(...)
+      - pattern: marshal.loads(...)
+      - pattern: yaml.load(...)
+  - id: free-cascade-openrouter-finite-model
+    languages: [python]
+    message: "Stage 04b: OpenRouter catalogue models must use the :free suffix (global free-only invariant)."
+    severity: ERROR
+    paths:
+      include:
+        - /src/astra_coder/free_cascade.py
+    patterns:
+      - pattern-either:
+          - pattern: ModelSpec(..., provider="openrouter", model=$MODEL, ...)
+          - pattern: ModelSpec(..., model=$MODEL, ..., provider="openrouter", ...)
+      - metavariable-regex:
+          metavariable: $MODEL
+          regex: '^(?!.*:free"?$).*$'

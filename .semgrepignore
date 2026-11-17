@@ -1,0 +1,25 @@
+# Astra Coder Semgrep coverage policy.
+# This file replaces Semgrep's built-in default ignore list, which skipped all
+# tests/ (including the Stage 04b security contract tests). Only generated,
+# vendored and evidence paths are excluded; source and tests are always scanned.
+.git/
+.venv/
+venv/
+.security-venv/
+.security-venv-win/
+.tools/
+node_modules/
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.bak
+build/
+dist/
+dashboard/.next/
+dashboard/out/
+audit-upload/
+gitleaks-artifact/
+reports/
+*.log
+coverage.json
+coverage.xml
