@@ -79,15 +79,15 @@ the v1.0.0 sign-off above.
   `3045C669207D0ADDCDF117EA37B6CBF82E595C67FA6AAAD018B3B6645326D5D8` (unchanged).
 - Commits: `72fd7a1` Stage 04b wired, `d66f7ba` CI runner pin to ubuntu-24.04, `d89449a` CI format fix,
   `cf47246` gitleaks allowlist, `98f4e06` FINAL_REPORT update with RUN 44154077310.
-- Tests: local PASS 328 passed, 2 skipped (`pytest.log`, `--strict-markers`). CI `make test`: 330 passed.
+- Tests: local Windows PASS 328 passed + 2 skipped (`pytest.log`, `--strict-markers`); Linux CI `make test`: 330 passed. The two local skips are `tests/test_docker_tools.py:378` and `tests/test_tools.py:53`, both "symlinks unavailable on this filesystem"; they are environment skips, not failures (328 + 2 = 330 collected).
 - Coverage: total 86.95%; free_cascade 99%; gateway 88%; policy 98% (`coverage.xml`).
 - ruff / mypy / format: PASS in local and in CI (0 findings, 50 files formatted).
-- semgrep: PASS in CI, 0 findings / 29 targets, 2 rules.
-- gitleaks: PASS in CI RUN 44155145765, `no leaks found`. The 2 earlier findings were PRE-EXISTING in
-  base `30be0c0`, in `reports/d54-dockerfile-verify-20261025.md`, generic-api-key on Docker image IDs,
-  container IDs and SHA-256 verification hashes at lines 38 and 117. None were in Stage 04b diff.
-  Fix: narrow allowlist in `.gitleaks.toml` for that one report file only, with written justification.
-  No redaction of D5.4 evidence, no history rewrite, no whole-repo allowlist.
+- semgrep: PASS in CI, 0 findings / 52 targets / 5 rules (post-Q2 coverage in main; supersedes the earlier 29 targets / 2 rules figure).
+- gitleaks: PASS in CI RUN 44155145765 and post-Q1 in main CI RUN 44171352485, `no leaks found`. The 2
+  earlier findings were PRE-EXISTING in base `30be0c0`, in `reports/d54-dockerfile-verify-20261025.md`,
+  generic-api-key on Docker image IDs, container IDs and SHA-256 verification hashes at lines 38 and 117.
+  Q1 fix in PR #2: removed the whole-file `paths` allowlist, restored `[extend] useDefault = true`, and
+  suppressed only the two exact fingerprints in `.gitleaksignore`. No redaction, no history rewrite.
 - Security: NETWORK evaluated before gateway; T4 recorded approval; secret redaction; mandatory
   audit sink; TaskLimits preflight; global OpenRouter `:free` invariant; startup cascade validation.
 - Gates: G1 PASS, G2 PASS, G3 PASS, G4 PASS, G5 PASS.
@@ -97,6 +97,27 @@ the v1.0.0 sign-off above.
     - RUN 44154077310: FAIL, 7 of 8 steps PASS, only gitleaks FAIL on 2 pre-existing leaks above.
     - RUN 44155145765: SUCCESS, 1m12s, full CI PASS, test plus lint plus format plus typecheck plus
     semgrep plus gitleaks all PASS. This is the certifying run.
-- Status: pushed, full CI PASS, CERTIFIED on feat branch.
-- Final verdict is recorded in docs/stages/04b.md. v1.0.1 is NOT merged to main, NOT tagged, NOT deployed
-  in this report. Merge, tag and deploy need separate explicit approval.
+- Historical status: pushed, full CI PASS, CERTIFIED on feat branch.
+- Final verdict is recorded in docs/stages/04b.md. Merge, tag and deploy required separate explicit approval.
+
+### 7.1 Post-PR #2 documentation reconciliation (Q1/Q2/Q3 closed in main)
+
+This subsection reconciles the record after PR #2 was merged. It is documentation only: no code,
+workflow, security config, or evidence file is changed by this update.
+
+- Q1 Gitleaks: CLOSED in main at `34d81bcbab28a44830563aaaeac325c653a12f88`. Evidence: PR #2 and main CI
+  run 44171352485 SUCCESS (gitleaks `no leaks found`). Two finding-level fingerprints in `.gitleaksignore`;
+  no file-level path allowlist.
+- Q2 Semgrep: CLOSED in main at `34d81bcbab28a44830563aaaeac325c653a12f88`. Evidence: PR #2 and CI
+  44171352485. Coverage corrected to 52 targets / 5 rules / 0 findings (supersedes 29 / 2); tests are scanned.
+- Q3 CI runtime: CLOSED in main at `34d81bcbab28a44830563aaaeac325c653a12f88`. Evidence: PR #2 and CI
+  44171352485. Actions on Node 24 (`checkout@v6`, `setup-python@v6`, `gitleaks-action@v3`), no Node.js 20
+  deprecation.
+- Test-count reconciliation: local Windows 328 passed + 2 skipped; Linux CI 330 passed. The two skips are
+  `tests/test_docker_tools.py:378` and `tests/test_tools.py:53`, both "symlinks unavailable on this
+  filesystem"; environment-dependent, not failures.
+- D5: PARTIAL. No new D5 closure evidence is introduced by this reconciliation.
+- Worker conflict: UNRESOLVED. `reports/worker-smoke.json` is unchanged and not re-adjudicated here.
+- Stage 16: NOT CERTIFIED. This reconciliation introduces no Stage 16 gate evidence and does not re-open
+  or re-certify the historical v1.0.0 sign-off above.
+- Tag: `v1.0.1` still points to `b81226a`; no new tag created by this work.
