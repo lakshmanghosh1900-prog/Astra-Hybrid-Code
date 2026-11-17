@@ -1,3 +1,7 @@
-[allowlist]
-description = "Pre-existing D5.4 verification report hashes, not secrets. Docker image IDs, container IDs and SHA-256 evidence, verified false positive, not active secrets."
-paths = ["reports/d54-dockerfile-verify-20261025.md"]
+title = "Astra Coder gitleaks policy"
+
+[extend]
+useDefault = true
+
+# Finding-level suppressions live in .gitleaksignore (exact fingerprints only).
+# No file-level path allowlist: new secrets in reports/ are still detected.
