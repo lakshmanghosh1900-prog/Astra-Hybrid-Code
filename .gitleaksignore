@@ -1,0 +1,5 @@
+# Finding-level suppressions only. Two pre-existing false positives in the
+# D5.4 verification report (base commit 30be0c0), lines 38 and 117:
+# Docker image tags / container IDs / SHA-256 evidence, not active secrets.
+30be0c025be7f786f5763cb2085f44cada38f812:reports/d54-dockerfile-verify-20261025.md:generic-api-key:38
+30be0c025be7f786f5763cb2085f44cada38f812:reports/d54-dockerfile-verify-20261025.md:generic-api-key:117
