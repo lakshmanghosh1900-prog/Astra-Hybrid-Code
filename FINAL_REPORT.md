@@ -116,8 +116,12 @@ workflow, security config, or evidence file is changed by this update.
 - Test-count reconciliation: local Windows 328 passed + 2 skipped; Linux CI 330 passed. The two skips are
   `tests/test_docker_tools.py:378` and `tests/test_tools.py:53`, both "symlinks unavailable on this
   filesystem"; environment-dependent, not failures.
-- D5: PARTIAL. No new D5 closure evidence is introduced by this reconciliation.
-- Worker conflict: UNRESOLVED. `reports/worker-smoke.json` is unchanged and not re-adjudicated here.
-- Stage 16: NOT CERTIFIED. This reconciliation introduces no Stage 16 gate evidence and does not re-open
-  or re-certify the historical v1.0.0 sign-off above.
+- D5: CLOSED, closed by PR #5 merge commit `9d48b22cd61772d68103bf0a0d5b8bfd517b0318`.
+- Worker conflict: RESOLVED by isolated rerun.
+- Full-profile evidence SHA-256: `54C4A56AC494865896F2E7C4F9BEF62BB7876703E6C95DAE3361D88ED9E024E5`.
+  Protected report hash unchanged: `3045C669207D0ADDCDF117EA37B6CBF82E595C67FA6AAAD018B3B6645326D5D8`.
+- PR #5 CI runs: `44192723668` (push) SUCCESS, `44192760613` (pull_request) SUCCESS; main CI run
+  `44193923749` SUCCESS.
+- D54 fingerprints preserved: line 38 `d743c19c...`, line 117 `9f8f0aa7...`, verified by Python bytes hash.
+- Stage 16: NOT CERTIFIED. No production readiness claim.
 - Tag: `v1.0.1` still points to `b81226a`; no new tag created by this work.
