@@ -65,3 +65,30 @@ def test_default_runner_fails_closed(tmp_path: Path) -> None:
     summary = VerificationEngine(gates=gates()).run(tmp_path)
     assert not summary.passed
     assert all(gate.status is GateStatus.UNAVAILABLE for gate in summary.gates)
+
+
+@pytest.mark.parametrize("name", [GateName.SEMGREP, GateName.GITLEAKS])
+def test_failed_scanner_gate_prevents_success(tmp_path: Path, name: GateName) -> None:
+    spec = GateSpec(name=name, argv=(name.value,))
+    runner = FakeRunner([ProcessResult(exit_code=1, stderr=f"{name.value} finding")])
+    summary = VerificationEngine(runner, (spec,)).run(tmp_path)
+    assert not summary.passed
+    assert summary.gates[0].status is GateStatus.FAILED
+    assert f"{name.value} finding" in summary.gates[0].findings
+
+
+@pytest.mark.parametrize("name", [GateName.SEMGREP, GateName.GITLEAKS])
+@pytest.mark.parametrize(
+    ("process", "status"),
+    [
+        (ProcessResult(unavailable=True), GateStatus.UNAVAILABLE),
+        (ProcessResult(timed_out=True), GateStatus.TIMED_OUT),
+    ],
+)
+def test_unavailable_or_timeout_scanner_gate_prevents_success(
+    tmp_path: Path, name: GateName, process: ProcessResult, status: GateStatus
+) -> None:
+    spec = GateSpec(name=name, argv=(name.value,))
+    summary = VerificationEngine(FakeRunner([process]), (spec,)).run(tmp_path)
+    assert not summary.passed
+    assert summary.gates[0].status is status

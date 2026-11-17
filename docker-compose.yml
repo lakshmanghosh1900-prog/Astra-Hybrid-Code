@@ -77,6 +77,7 @@ services:
       ASTRA_DATABASE_URL: sqlite:////data/astra.db
       ASTRA_REPO_ROOT: /repositories
       ASTRA_WORKER_ENABLED: "1"
+      ASTRA_WORKER_PLAN_MODE: ${ASTRA_WORKER_PLAN_MODE:-llm}
       ASTRA_SANDBOX_IMAGE: astracoder-api:local
       ASTRA_WORKSPACE_VOLUME: ${ASTRA_WORKSPACE_VOLUME:-astracoder-workspaces}
       ASTRA_WORKER_GATES_JSON: ${ASTRA_WORKER_GATES_JSON:-}
