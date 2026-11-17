@@ -53,8 +53,11 @@ repositories are preserved, not silently refreshed or reset.
 
 Without `ASTRA_WORKER_GATES_JSON`, all five default gates are mandatory: tests,
 lint, typecheck, Semgrep and Gitleaks. Missing scanners fail verification. The smoke
-script explicitly configures a **demo-only** tests/lint/typecheck profile. This is
-not scanner evidence and does not clear the critical Next.js audit finding.
+script explicitly configures a **demo-only three-gate profile**: tests, lint and
+typecheck (`verification_profile` in `reports/worker-smoke.json`). Semgrep and
+Gitleaks are excluded from that profile, so a smoke PASS is not scanner evidence:
+the release gate remains **BLOCKED** until the five-gate production profile passes.
+This also does not clear the critical Next.js audit finding.
 
 `GET /tasks/{id}/result` returns the durable request and verification result and
 requires bearer authentication. Admin-only `GET`/`POST /controls/kill-switch`

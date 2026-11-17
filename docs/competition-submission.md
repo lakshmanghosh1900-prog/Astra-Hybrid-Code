@@ -2,9 +2,13 @@
 
 > Historical eligibility review from before the Compose worker integration.
 > Current execution scope and run instructions are in [worker-demo.md](worker-demo.md);
-> current live evidence is in [worker-smoke.json](../reports/worker-smoke.json).
-> The rules/registration/publication checks below remain unconfirmed. Historical
-> statements about the missing worker or Docker prerequisites are superseded.
+> current live evidence is in [worker-smoke.json](../reports/worker-smoke.json)
+> and [worker-verification.md](../reports/worker-verification.md).
+> The rules/registration/publication checks below remain unconfirmed.
+> **Worker claims in this historical document are SUPERSEDED** by
+> `reports/worker-smoke.json` and `reports/worker-verification.md`. Historical
+> statements about the missing worker or Docker prerequisites are retained for
+> provenance only; do not rely on them for current worker scope.
 
 Prepared from the current workspace and prior verified checks. No publication,
 deployment, or submission is authorized by this document.
