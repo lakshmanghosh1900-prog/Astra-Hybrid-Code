@@ -14,6 +14,7 @@ from astra_coder.agents import (
     Plan,
     PlanAction,
 )
+from astra_coder.memory_engine import AstraMemoryEngine, MemoryStatus
 from astra_coder.orchestrator import OrchestrationBlocked, OrchestrationResult
 from astra_coder.persistence import AuditLog, StateStore, TaskScope
 from astra_coder.policy import Actor, PolicyConfig, PolicyEngine
@@ -327,6 +328,7 @@ def test_task_worker_does_not_rerun_terminal_task(tmp_path: Path) -> None:
 def test_task_worker_claims_and_completes_one_queued_task(tmp_path: Path) -> None:
     store = StateStore("sqlite:///:memory:")
     audit = AuditLog(store)
+    memory = AstraMemoryEngine(tmp_path / "worker-memory.db", audit=audit, audit_actor="worker-1")
     task = Task(prompt="queued", repo_path=str(tmp_path), state=TaskState.CONTEXT_BUILT)
     store.save_task(task)
     store.enqueue_execution(task.id, "developer")
@@ -347,6 +349,7 @@ def test_task_worker_claims_and_completes_one_queued_task(tmp_path: Path) -> Non
         store=store,
         audit=audit,
         worker_id="worker-1",
+        memory=memory,
     )
     result = worker.run_next(lambda supplied_task: f"context for {supplied_task.id}")
 
@@ -354,6 +357,10 @@ def test_task_worker_claims_and_completes_one_queued_task(tmp_path: Path) -> Non
     request = store.get_execution_request(task.id)
     assert request is not None and request.status == "succeeded"
     assert audit.replay(str(task.id))[-1].action == "worker_completed"
+    recalled = memory.search(f"task {task.id}")
+    assert recalled and recalled[0].entry.status is MemoryStatus.SUCCESS
+    assert audit.verify_chain()
+    memory.close()
 
 
 def test_task_worker_fails_closed_when_execution_guard_rejects(tmp_path: Path) -> None:

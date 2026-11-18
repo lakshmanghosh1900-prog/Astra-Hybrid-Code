@@ -8,6 +8,7 @@ from astra_coder.memory_engine import (
     MemoryEngineError,
     MemoryStatus,
 )
+from astra_coder.persistence import AuditLog, StateStore
 
 
 def engine(
@@ -123,6 +124,22 @@ def test_secrets_are_redacted_before_storage(tmp_path: Path) -> None:
     assert "supersecretvalue123" not in entry.context
     assert "anothersecretvalue" not in entry.solution
     assert "[REDACTED]" in entry.context
+    store.close()
+
+
+def test_memory_writes_are_audited_without_persisting_content(tmp_path: Path) -> None:
+    state = StateStore("sqlite:///:memory:")
+    audit = AuditLog(state)
+    store = AstraMemoryEngine(tmp_path / "memory.db", audit=audit, audit_actor="tester")
+    entry = store.remember("sensitive context token=supersecretvalue123", "safe solution")
+
+    events = audit.events(f"memory:{entry.id}")
+    assert len(events) == 1
+    assert events[0].actor == "tester"
+    assert events[0].action == "memory_remember"
+    assert events[0].decision == "stored"
+    assert "supersecretvalue123" not in str(events[0].metadata)
+    assert audit.verify_chain()
     store.close()
 
 

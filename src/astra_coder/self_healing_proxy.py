@@ -31,6 +31,7 @@ from .redaction import SecretRedactor
 
 T = TypeVar("T")
 
+MAX_ATTEMPTS: Final[int] = 3
 MAX_HISTORY: Final[int] = 1_000
 _HEX_ID_PATTERN: Final[re.Pattern[str]] = re.compile(
     r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", re.IGNORECASE
@@ -74,7 +75,7 @@ class FailureReport(BaseModel):
     message: str = Field(min_length=1, max_length=2_000)
     traceback: str = Field(default="", max_length=8_000)
     category: FailureCategory
-    attempt: int = Field(ge=1, le=100)
+    attempt: int = Field(ge=1, le=MAX_ATTEMPTS)
     occurred_at: datetime
     recalled_solutions: tuple[str, ...] = ()
 
@@ -144,8 +145,8 @@ class AstraSelfHealingProxy:
         clock: Clock | None = None,
         sleeper: Sleeper | None = None,
     ) -> None:
-        if not 1 <= max_attempts <= 10:
-            raise ValueError("max_attempts must be between 1 and 10")
+        if not 1 <= max_attempts <= MAX_ATTEMPTS:
+            raise ValueError(f"max_attempts must be between 1 and {MAX_ATTEMPTS}")
         if not 0.0 <= backoff_seconds <= 60.0:
             raise ValueError("backoff_seconds must be between 0 and 60")
         if not 1 <= max_identical_failures <= 10:
@@ -400,5 +401,6 @@ __all__ = [
     "HealingAction",
     "HealingOutcome",
     "HealingStatus",
+    "MAX_ATTEMPTS",
     "SelfHealingError",
 ]
