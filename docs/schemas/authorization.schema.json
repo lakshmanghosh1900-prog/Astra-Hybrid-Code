@@ -1,0 +1,421 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://astracoder.local/schemas/authorization.schema.json",
+  "title": "authorization",
+  "description": "Proposed template-derived contract. Not proof of authorization, compliance, or evidence validity. Signature and expiry must be verified by an external human verifier. Schema alone does not prove authorization. Exact 1-to-1 mapping enforced: PENDING<->PENDING_HUMAN_APPROVAL, APPROVED<->APPROVED, REJECTED<->REJECTED, REVOKED<->REVOKED.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "artifact_type": {
+      "const": "ASTRA_CODER_STAGE_AUTHORIZATION"
+    },
+    "artifact_status": {
+      "enum": [
+        "PENDING_HUMAN_APPROVAL",
+        "APPROVED",
+        "REJECTED",
+        "REVOKED"
+      ]
+    },
+    "authorization": {
+      "type": "object",
+      "properties": {
+        "authorization_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repository": {
+          "const": "lakshmanghosh1900-prog/Astra-Hybrid-Code"
+        },
+        "target_branch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stage": {
+          "const": "05b"
+        },
+        "scope": {
+          "const": "REA_IMPLEMENTATION"
+        },
+        "issued_at_utc": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expires_at_utc": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "human_approver": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "identity": {
+              "type": "string",
+              "minLength": 1
+            },
+            "role": {
+              "type": "string",
+              "minLength": 1
+            },
+            "verification_method": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "name",
+            "identity",
+            "role",
+            "verification_method"
+          ],
+          "additionalProperties": false
+        },
+        "approved_actions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "prohibited_actions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "approval_decision": {
+          "enum": [
+            "PENDING",
+            "APPROVED",
+            "REJECTED",
+            "REVOKED"
+          ]
+        },
+        "approval_evidence_reference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "authorization_id",
+        "repository",
+        "target_branch",
+        "stage",
+        "scope",
+        "issued_at_utc",
+        "expires_at_utc",
+        "human_approver",
+        "approved_actions",
+        "prohibited_actions",
+        "approval_decision",
+        "approval_evidence_reference"
+      ],
+      "additionalProperties": false
+    },
+    "cryptographic_proof": {
+      "type": "object",
+      "properties": {
+        "algorithm": {
+          "const": "Ed25519"
+        },
+        "key_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "signed_payload_sha256": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "signature": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "signature_verified": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "algorithm",
+        "key_id",
+        "signed_payload_sha256",
+        "signature",
+        "signature_verified"
+      ],
+      "additionalProperties": false
+    },
+    "governance": {
+      "type": "object",
+      "properties": {
+        "executor_can_authorize_self": {
+          "const": false
+        },
+        "human_approval_required": {
+          "const": true
+        },
+        "fail_closed": {
+          "const": true
+        },
+        "revocable": {
+          "const": true
+        }
+      },
+      "required": [
+        "executor_can_authorize_self",
+        "human_approval_required",
+        "fail_closed",
+        "revocable"
+      ],
+      "additionalProperties": false
+    },
+    "validation": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "NOT_VALIDATED",
+            "VALID",
+            "INVALID"
+          ]
+        },
+        "validated_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "validated_at_utc": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "status",
+        "validated_by",
+        "validated_at_utc"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "artifact_status",
+    "authorization",
+    "cryptographic_proof",
+    "governance",
+    "validation"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "authorization": {
+            "properties": {
+              "approval_decision": {
+                "const": "PENDING"
+              }
+            },
+            "required": [
+              "approval_decision"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact_status": {
+            "const": "PENDING_HUMAN_APPROVAL"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "artifact_status": {
+            "const": "PENDING_HUMAN_APPROVAL"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "authorization": {
+            "properties": {
+              "approval_decision": {
+                "const": "PENDING"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "authorization": {
+            "properties": {
+              "approval_decision": {
+                "const": "APPROVED"
+              }
+            },
+            "required": [
+              "approval_decision"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact_status": {
+            "const": "APPROVED"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "artifact_status": {
+            "const": "APPROVED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "authorization": {
+            "properties": {
+              "approval_decision": {
+                "const": "APPROVED"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "authorization": {
+            "properties": {
+              "approval_decision": {
+                "const": "REJECTED"
+              }
+            },
+            "required": [
+              "approval_decision"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact_status": {
+            "const": "REJECTED"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "artifact_status": {
+            "const": "REJECTED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "authorization": {
+            "properties": {
+              "approval_decision": {
+                "const": "REJECTED"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "authorization": {
+            "properties": {
+              "approval_decision": {
+                "const": "REVOKED"
+              }
+            },
+            "required": [
+              "approval_decision"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact_status": {
+            "const": "REVOKED"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "artifact_status": {
+            "const": "REVOKED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "authorization": {
+            "properties": {
+              "approval_decision": {
+                "const": "REVOKED"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}
