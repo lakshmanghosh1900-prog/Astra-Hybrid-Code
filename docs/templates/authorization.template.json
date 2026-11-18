@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_type": "ASTRA_CODER_STAGE_AUTHORIZATION",
+  "artifact_status": "PENDING_HUMAN_APPROVAL",
+
+  "authorization": {
+    "authorization_id": "REPLACE_WITH_UNIQUE_ID",
+    "repository": "lakshmanghosh1900-prog/Astra-Hybrid-Code",
+    "target_branch": "feat/05b-rea",
+    "stage": "05b",
+    "scope": "REA_IMPLEMENTATION",
+    "issued_at_utc": null,
+    "expires_at_utc": null,
+
+    "human_approver": {
+      "name": "REQUIRED_HUMAN_OPERATOR",
+      "identity": "REQUIRED_VERIFIABLE_IDENTITY",
+      "role": "AUTHORIZED_REPOSITORY_OWNER",
+      "verification_method": "REQUIRED"
+    },
+
+    "approved_actions": [],
+    "prohibited_actions": [
+      "SELF_APPROVAL",
+      "UNAUTHORIZED_CODE_EXECUTION",
+      "SECRET_DISCLOSURE",
+      "UNAUTHORIZED_EXTERNAL_ACCESS",
+      "UNAUTHORIZED_DEPLOYMENT",
+      "UNAUTHORIZED_GIT_MERGE"
+    ],
+
+    "approval_decision": "PENDING",
+    "approval_evidence_reference": null
+  },
+
+  "cryptographic_proof": {
+    "algorithm": "Ed25519",
+    "key_id": null,
+    "signed_payload_sha256": null,
+    "signature": null,
+    "signature_verified": false
+  },
+
+  "governance": {
+    "executor_can_authorize_self": false,
+    "human_approval_required": true,
+    "fail_closed": true,
+    "revocable": true
+  },
+
+  "validation": {
+    "status": "NOT_VALIDATED",
+    "validated_by": null,
+    "validated_at_utc": null
+  }
+}

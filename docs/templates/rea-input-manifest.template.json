@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_type": "ASTRA_CODER_REA_INPUT_MANIFEST",
+  "artifact_status": "INCOMPLETE",
+
+  "manifest": {
+    "manifest_id": "REPLACE_WITH_UNIQUE_ID",
+    "repository": "lakshmanghosh1900-prog/Astra-Hybrid-Code",
+    "base_commit": "69922ba326f6c19e5bd8080bc06f6936dd54f4f1",
+    "target_branch": "feat/05b-rea",
+    "stage": "05b",
+    "created_at_utc": null,
+    "created_by": "HUMAN_OPERATOR"
+  },
+
+  "authorization_reference": {
+    "artifact": "authorization.json",
+    "authorization_id": null,
+    "sha256": null,
+    "verification_status": "NOT_VERIFIED"
+  },
+
+  "license_reference": {
+    "artifact": "license-check.json",
+    "sha256": null,
+    "verification_status": "NOT_VERIFIED"
+  },
+
+  "inputs": [],
+
+  "input_record_schema": {
+    "source_id": "UNIQUE_SOURCE_ID",
+    "source_type": "REPOSITORY_FILE_OR_EXTERNAL_RESOURCE",
+    "source_path_or_uri": "REQUIRED",
+    "sha256": "REQUIRED_SHA256",
+    "version_or_commit": "REQUIRED",
+    "provenance": "REQUIRED",
+    "license_reference": "REQUIRED",
+    "data_classification": "REQUIRED",
+    "permitted_purpose": "REQUIRED",
+    "integrity_verified": false
+  },
+
+  "execution_constraints": {
+    "network_access": "DENY_BY_DEFAULT",
+    "filesystem_scope": "EXPLICIT_ALLOWLIST_ONLY",
+    "secret_access": "DENY",
+    "unlisted_inputs_allowed": false,
+    "input_modification_allowed": false
+  },
+
+  "verification": {
+    "all_inputs_hashed": false,
+    "all_sources_traced": false,
+    "all_licenses_resolved": false,
+    "authorization_verified": false,
+    "manifest_verified": false
+  },
+
+  "result": {
+    "status": "INCOMPLETE",
+    "approved_for_rea": false,
+    "blocking_reasons": [
+      "INPUT_INVENTORY_NOT_SUPPLIED",
+      "AUTHORIZATION_NOT_VERIFIED",
+      "LICENSE_EVIDENCE_NOT_VERIFIED"
+    ]
+  }
+}
