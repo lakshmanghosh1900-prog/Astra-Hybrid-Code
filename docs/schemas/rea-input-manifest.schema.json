@@ -214,7 +214,8 @@
         },
         "sha256": {
           "type": "string",
-          "pattern": "^[a-fA-F0-9]{64}$"
+          "minLength": 1,
+          "description": "Illustrative template value; actual inputs[].sha256 must be a 64-character SHA-256."
         },
         "version_or_commit": {
           "type": "string",

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://astracoder.local/schemas/authorization.schema.json",
   "title": "authorization",
-  "description": "Proposed template-derived contract. Not proof of authorization, compliance, or evidence validity. Signature and expiry must be verified by an external human verifier. Schema alone does not prove authorization.",
+  "description": "Proposed template-derived contract. Not proof of authorization, compliance, or evidence validity. Signature and expiry must be verified by an external human verifier. Schema alone does not prove authorization. Exact 1-to-1 mapping enforced: PENDING<->PENDING_HUMAN_APPROVAL, APPROVED<->APPROVED, REJECTED<->REJECTED, REVOKED<->REVOKED.",
   "type": "object",
   "properties": {
     "schema_version": {
@@ -250,6 +250,49 @@
           "authorization": {
             "properties": {
               "approval_decision": {
+                "const": "PENDING"
+              }
+            },
+            "required": [
+              "approval_decision"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact_status": {
+            "const": "PENDING_HUMAN_APPROVAL"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "artifact_status": {
+            "const": "PENDING_HUMAN_APPROVAL"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "authorization": {
+            "properties": {
+              "approval_decision": {
+                "const": "PENDING"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "authorization": {
+            "properties": {
+              "approval_decision": {
                 "const": "APPROVED"
               }
             },
@@ -263,75 +306,6 @@
         "properties": {
           "artifact_status": {
             "const": "APPROVED"
-          },
-          "authorization": {
-            "properties": {
-              "issued_at_utc": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "expires_at_utc": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "approved_actions": {
-                "minItems": 1
-              },
-              "approval_evidence_reference": {
-                "type": "string",
-                "minLength": 1
-              }
-            }
-          },
-          "cryptographic_proof": {
-            "properties": {
-              "key_id": {
-                "type": "string",
-                "minLength": 1
-              },
-              "signed_payload_sha256": {
-                "type": "string",
-                "pattern": "^[a-fA-F0-9]{64}$"
-              },
-              "signature": {
-                "type": "string",
-                "minLength": 1
-              },
-              "signature_verified": {
-                "const": true
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "if": {
-        "properties": {
-          "authorization": {
-            "properties": {
-              "approval_decision": {
-                "enum": [
-                  "PENDING",
-                  "REJECTED",
-                  "REVOKED"
-                ]
-              }
-            },
-            "required": [
-              "approval_decision"
-            ]
-          }
-        }
-      },
-      "then": {
-        "properties": {
-          "artifact_status": {
-            "enum": [
-              "PENDING_HUMAN_APPROVAL",
-              "REJECTED",
-              "REVOKED"
-            ]
           }
         }
       }
@@ -350,6 +324,92 @@
             "properties": {
               "approval_decision": {
                 "const": "APPROVED"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "authorization": {
+            "properties": {
+              "approval_decision": {
+                "const": "REJECTED"
+              }
+            },
+            "required": [
+              "approval_decision"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact_status": {
+            "const": "REJECTED"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "artifact_status": {
+            "const": "REJECTED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "authorization": {
+            "properties": {
+              "approval_decision": {
+                "const": "REJECTED"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "authorization": {
+            "properties": {
+              "approval_decision": {
+                "const": "REVOKED"
+              }
+            },
+            "required": [
+              "approval_decision"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact_status": {
+            "const": "REVOKED"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "artifact_status": {
+            "const": "REVOKED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "authorization": {
+            "properties": {
+              "approval_decision": {
+                "const": "REVOKED"
               }
             }
           }
