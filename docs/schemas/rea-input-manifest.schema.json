@@ -1,0 +1,445 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://astracoder.local/schemas/rea-input-manifest.schema.json",
+  "title": "rea-input-manifest",
+  "description": "Proposed template-derived contract. Not proof of authorization, compliance, or evidence validity.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "artifact_type": {
+      "const": "ASTRA_CODER_REA_INPUT_MANIFEST"
+    },
+    "artifact_status": {
+      "enum": [
+        "INCOMPLETE",
+        "COMPLETE",
+        "BLOCKED"
+      ]
+    },
+    "manifest": {
+      "type": "object",
+      "properties": {
+        "manifest_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repository": {
+          "const": "lakshmanghosh1900-prog/Astra-Hybrid-Code"
+        },
+        "base_commit": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{40,64}$"
+        },
+        "target_branch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stage": {
+          "const": "05b"
+        },
+        "created_at_utc": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_by": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "manifest_id",
+        "repository",
+        "base_commit",
+        "target_branch",
+        "stage",
+        "created_at_utc",
+        "created_by"
+      ],
+      "additionalProperties": false
+    },
+    "authorization_reference": {
+      "type": "object",
+      "properties": {
+        "artifact": {
+          "const": "authorization.json"
+        },
+        "authorization_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sha256": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "verification_status": {
+          "enum": [
+            "NOT_VERIFIED",
+            "VERIFIED",
+            "INVALID"
+          ]
+        }
+      },
+      "required": [
+        "artifact",
+        "authorization_id",
+        "sha256",
+        "verification_status"
+      ],
+      "additionalProperties": false
+    },
+    "license_reference": {
+      "type": "object",
+      "properties": {
+        "artifact": {
+          "const": "license-check.json"
+        },
+        "sha256": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "verification_status": {
+          "enum": [
+            "NOT_VERIFIED",
+            "VERIFIED",
+            "INVALID"
+          ]
+        }
+      },
+      "required": [
+        "artifact",
+        "sha256",
+        "verification_status"
+      ],
+      "additionalProperties": false
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_path_or_uri": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$"
+          },
+          "version_or_commit": {
+            "type": "string",
+            "minLength": 1
+          },
+          "provenance": {
+            "type": "string",
+            "minLength": 1
+          },
+          "license_reference": {
+            "type": "string",
+            "minLength": 1
+          },
+          "data_classification": {
+            "type": "string",
+            "minLength": 1
+          },
+          "permitted_purpose": {
+            "type": "string",
+            "minLength": 1
+          },
+          "integrity_verified": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "source_id",
+          "source_type",
+          "source_path_or_uri",
+          "sha256",
+          "version_or_commit",
+          "provenance",
+          "license_reference",
+          "data_classification",
+          "permitted_purpose",
+          "integrity_verified"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "input_record_schema": {
+      "type": "object",
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_path_or_uri": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "version_or_commit": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provenance": {
+          "type": "string",
+          "minLength": 1
+        },
+        "license_reference": {
+          "type": "string",
+          "minLength": 1
+        },
+        "data_classification": {
+          "type": "string",
+          "minLength": 1
+        },
+        "permitted_purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "integrity_verified": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source_id",
+        "source_type",
+        "source_path_or_uri",
+        "sha256",
+        "version_or_commit",
+        "provenance",
+        "license_reference",
+        "data_classification",
+        "permitted_purpose",
+        "integrity_verified"
+      ],
+      "additionalProperties": false
+    },
+    "execution_constraints": {
+      "type": "object",
+      "properties": {
+        "network_access": {
+          "const": "DENY_BY_DEFAULT"
+        },
+        "filesystem_scope": {
+          "const": "EXPLICIT_ALLOWLIST_ONLY"
+        },
+        "secret_access": {
+          "const": "DENY"
+        },
+        "unlisted_inputs_allowed": {
+          "const": false
+        },
+        "input_modification_allowed": {
+          "const": false
+        }
+      },
+      "required": [
+        "network_access",
+        "filesystem_scope",
+        "secret_access",
+        "unlisted_inputs_allowed",
+        "input_modification_allowed"
+      ],
+      "additionalProperties": false
+    },
+    "verification": {
+      "type": "object",
+      "properties": {
+        "all_inputs_hashed": {
+          "type": "boolean"
+        },
+        "all_sources_traced": {
+          "type": "boolean"
+        },
+        "all_licenses_resolved": {
+          "type": "boolean"
+        },
+        "authorization_verified": {
+          "type": "boolean"
+        },
+        "manifest_verified": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "all_inputs_hashed",
+        "all_sources_traced",
+        "all_licenses_resolved",
+        "authorization_verified",
+        "manifest_verified"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "INCOMPLETE",
+            "PASS",
+            "BLOCKED"
+          ]
+        },
+        "approved_for_rea": {
+          "type": "boolean"
+        },
+        "blocking_reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "status",
+        "approved_for_rea",
+        "blocking_reasons"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "artifact_status",
+    "manifest",
+    "authorization_reference",
+    "license_reference",
+    "inputs",
+    "input_record_schema",
+    "execution_constraints",
+    "verification",
+    "result"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "result": {
+            "properties": {
+              "approved_for_rea": {
+                "const": true
+              }
+            },
+            "required": [
+              "approved_for_rea"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact_status": {
+            "const": "COMPLETE"
+          },
+          "inputs": {
+            "minItems": 1,
+            "items": {
+              "properties": {
+                "integrity_verified": {
+                  "const": true
+                }
+              }
+            }
+          },
+          "authorization_reference": {
+            "properties": {
+              "authorization_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-fA-F0-9]{64}$"
+              },
+              "verification_status": {
+                "const": "VERIFIED"
+              }
+            }
+          },
+          "license_reference": {
+            "properties": {
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-fA-F0-9]{64}$"
+              },
+              "verification_status": {
+                "const": "VERIFIED"
+              }
+            }
+          },
+          "verification": {
+            "properties": {
+              "all_inputs_hashed": {
+                "const": true
+              },
+              "all_sources_traced": {
+                "const": true
+              },
+              "all_licenses_resolved": {
+                "const": true
+              },
+              "authorization_verified": {
+                "const": true
+              },
+              "manifest_verified": {
+                "const": true
+              }
+            }
+          },
+          "result": {
+            "properties": {
+              "status": {
+                "const": "PASS"
+              },
+              "blocking_reasons": {
+                "maxItems": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}

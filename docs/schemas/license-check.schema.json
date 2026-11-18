@@ -1,0 +1,520 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://astracoder.local/schemas/license-check.schema.json",
+  "title": "license-check",
+  "description": "Proposed template-derived contract. Not proof of authorization, compliance, or evidence validity.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "artifact_type": {
+      "const": "ASTRA_CODER_LICENSE_COMPLIANCE"
+    },
+    "artifact_status": {
+      "enum": [
+        "PENDING_VALIDATION",
+        "VALIDATED",
+        "BLOCKED"
+      ]
+    },
+    "repository": {
+      "const": "lakshmanghosh1900-prog/Astra-Hybrid-Code"
+    },
+    "target_branch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "stage": {
+      "const": "05b"
+    },
+    "validation_scope": {
+      "type": "object",
+      "properties": {
+        "production_dependencies": {
+          "type": "boolean"
+        },
+        "development_dependencies": {
+          "type": "boolean"
+        },
+        "transitive_dependencies": {
+          "type": "boolean"
+        },
+        "containers": {
+          "type": "boolean"
+        },
+        "models_and_datasets": {
+          "type": "boolean"
+        },
+        "external_services": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "production_dependencies",
+        "development_dependencies",
+        "transitive_dependencies",
+        "containers",
+        "models_and_datasets",
+        "external_services"
+      ],
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "properties": {
+        "sbom_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sbom_sha256": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dependency_lockfiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scanner_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "scanner_version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "scan_run_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "scan_timestamp_utc": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "sbom_path",
+        "sbom_sha256",
+        "dependency_lockfiles",
+        "scanner_name",
+        "scanner_version",
+        "scan_run_id",
+        "scan_timestamp_utc"
+      ],
+      "additionalProperties": false
+    },
+    "license_inventory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "component": {
+            "type": "string",
+            "minLength": 1
+          },
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "license": {
+            "type": "string",
+            "minLength": 1
+          },
+          "license_url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "provenance": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "component",
+          "license"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "allowlist": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "denylist": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unknown_license_policy": {
+          "const": "BLOCK"
+        },
+        "copyleft_review_required": {
+          "const": true
+        },
+        "commercial_use_review_required": {
+          "const": true
+        },
+        "model_license_review_required": {
+          "const": true
+        }
+      },
+      "required": [
+        "allowlist",
+        "denylist",
+        "unknown_license_policy",
+        "copyleft_review_required",
+        "commercial_use_review_required",
+        "model_license_review_required"
+      ],
+      "additionalProperties": false
+    },
+    "compliance_review": {
+      "type": "object",
+      "properties": {
+        "reviewer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reviewer_identity": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "review_timestamp_utc": {
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "finding_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "severity": {
+                "enum": [
+                  "LOW",
+                  "MEDIUM",
+                  "HIGH",
+                  "CRITICAL"
+                ]
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "component": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "finding_id",
+              "severity",
+              "description"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "exceptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "exception_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              },
+              "approval_reference": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "expires_at_utc": {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "exception_id",
+              "reason"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "exception_approval_reference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "reviewer",
+        "reviewer_identity",
+        "review_timestamp_utc",
+        "findings",
+        "exceptions",
+        "exception_approval_reference"
+      ],
+      "additionalProperties": false
+    },
+    "result": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "enum": [
+            "NOT_VALIDATED",
+            "PASS",
+            "BLOCKED"
+          ]
+        },
+        "blocking_findings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "approved_for_stage_05b": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "status",
+        "blocking_findings",
+        "approved_for_stage_05b"
+      ],
+      "additionalProperties": false
+    },
+    "governance": {
+      "type": "object",
+      "properties": {
+        "missing_evidence_fails_closed": {
+          "const": true
+        },
+        "unknown_license_fails_closed": {
+          "const": true
+        },
+        "self_certification_by_executor": {
+          "const": false
+        }
+      },
+      "required": [
+        "missing_evidence_fails_closed",
+        "unknown_license_fails_closed",
+        "self_certification_by_executor"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "artifact_status",
+    "repository",
+    "target_branch",
+    "stage",
+    "validation_scope",
+    "evidence",
+    "license_inventory",
+    "policy",
+    "compliance_review",
+    "result",
+    "governance"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "result": {
+            "properties": {
+              "approved_for_stage_05b": {
+                "const": true
+              }
+            },
+            "required": [
+              "approved_for_stage_05b"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "artifact_status": {
+            "const": "VALIDATED"
+          },
+          "evidence": {
+            "properties": {
+              "sbom_path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sbom_sha256": {
+                "type": "string",
+                "pattern": "^[a-fA-F0-9]{64}$"
+              },
+              "scanner_name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scan_run_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "scan_timestamp_utc": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "license_inventory": {
+            "minItems": 1
+          },
+          "compliance_review": {
+            "properties": {
+              "reviewer": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reviewer_identity": {
+                "type": "string",
+                "minLength": 1
+              },
+              "review_timestamp_utc": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "result": {
+            "properties": {
+              "status": {
+                "const": "PASS"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "result": {
+            "properties": {
+              "status": {
+                "const": "PASS"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "properties": {
+              "blocking_findings": {
+                "maxItems": 0
+              },
+              "approved_for_stage_05b": {
+                "const": true
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "result": {
+            "properties": {
+              "status": {
+                "const": "BLOCKED"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "properties": {
+              "approved_for_stage_05b": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}
