@@ -89,17 +89,22 @@ def test_execute_task_success_and_failure() -> None:
         raise AssertionError("execute_task did not raise on failure")
 
 
-def test_timeout_produces_terminal_result() -> None:
+def test_timeout_produces_terminal_result_without_waiting() -> None:
     def slow(_task: AgentTask) -> str:
-        time.sleep(0.2)
+        time.sleep(0.5)
         return "late"
 
     orchestrator = AstraOrchestrator([AstraAgent("slow", AgentRole.TESTER, slow)])
-    report = orchestrator.run_parallel_tasks(["work"], timeout_seconds=0.01)
+    started = time.monotonic()
+    report = orchestrator.run_parallel_tasks(["work"], timeout_seconds=0.02)
+    elapsed = time.monotonic() - started
 
     assert report.timed_out == 1
+    assert report.abandoned == 1
+    assert report.abandoned_task_ids == (report.results[0].task_id,)
     assert report.results[0].status is AgentStatus.TIMED_OUT
     assert "deadline" in (report.results[0].error or "")
+    assert elapsed < 0.4
 
 
 def test_fail_fast_cancels_pending_work() -> None:
@@ -130,6 +135,7 @@ def test_validation_and_registration_bounds() -> None:
         lambda: AstraAgent("bad name", AgentRole.TESTER),
         lambda: AstraAgent("name", "unknown"),
         lambda: AstraAgent("name", AgentRole.TESTER, max_attempts=0),
+        lambda: AstraAgent("name", AgentRole.TESTER, max_attempts=4),
         lambda: AstraAgent("name", AgentRole.TESTER, retry_backoff_seconds=-1),
         lambda: AstraOrchestrator(max_workers=0),
         lambda: AstraOrchestrator(default_timeout_seconds=0),

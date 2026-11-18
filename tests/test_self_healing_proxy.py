@@ -2,6 +2,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from astra_coder.memory_engine import AstraMemoryEngine, MemoryEngineError, MemoryStatus
+from astra_coder.policy import Action, Actor, PolicyConfig, PolicyEngine, Role
+from astra_coder.runtime import RiskTier
 from astra_coder.self_healing_proxy import (
     AstraSelfHealingProxy,
     FailureCategory,
@@ -173,7 +175,7 @@ def test_identical_failure_loop_breaker_blocks() -> None:
 
     proxy = AstraSelfHealingProxy(
         healer=lambda _report: HealingAction(patch="fix"),
-        max_attempts=5,
+        max_attempts=3,
         max_identical_failures=2,
         backoff_seconds=0.0,
     )
@@ -224,6 +226,28 @@ def test_preflight_failure_is_classified() -> None:
 
     assert outcome.status is HealingStatus.FAILED
     assert outcome.failures[0].category is FailureCategory.PERMISSION
+
+
+def test_policy_preflight_denial_blocks_handler() -> None:
+    policy = PolicyEngine(PolicyConfig(approval_min_risk=RiskTier.T0))
+    actor = Actor(actor_id="developer-1", role=Role.DEVELOPER)
+    calls = {"count": 0}
+
+    def preflight() -> None:
+        decision = policy.evaluate(actor, Action.EDIT, RiskTier.T0, "task-1")
+        if not decision.allowed:
+            raise PermissionError(decision.reason)
+
+    def handler() -> str:
+        calls["count"] += 1
+        return "unreachable"
+
+    outcome = AstraSelfHealingProxy(preflight=preflight).execute(handler)
+
+    assert outcome.status is HealingStatus.FAILED
+    assert outcome.last_failure is not None
+    assert outcome.last_failure.category is FailureCategory.PERMISSION
+    assert calls["count"] == 0
 
 
 def test_recalled_solutions_are_available_to_healer(tmp_path: Path) -> None:
@@ -342,6 +366,7 @@ def test_classification_and_reset() -> None:
 def test_configuration_validation() -> None:
     for call in (
         lambda: AstraSelfHealingProxy(max_attempts=0),
+        lambda: AstraSelfHealingProxy(max_attempts=4),
         lambda: AstraSelfHealingProxy(backoff_seconds=-1),
         lambda: AstraSelfHealingProxy(max_identical_failures=0),
     ):

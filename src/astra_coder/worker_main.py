@@ -14,6 +14,7 @@ from threading import Event
 from .agents import ArchitectAgent, EditorAgent, IndependentReviewerAgent, Plan
 from .config import Settings, load_settings
 from .free_cascade import CascadePlanBuilder, build_free_cascade_gateway
+from .memory_engine import AstraMemoryEngine
 from .persistence import AuditLog, StateStore
 from .policy import Actor, PolicyConfig, PolicyEngine
 from .redaction import SecretRedactor
@@ -98,6 +99,11 @@ def main() -> int:
         store = StateStore(settings.database_url)
         audit = AuditLog(store)
         worker_id = "compose-worker"
+        memory = AstraMemoryEngine(
+            os.environ.get("ASTRA_MEMORY_DB", "/data/astra-memory.db"),
+            audit=audit,
+            audit_actor=worker_id,
+        )
         store.recover_worker_after_restart(audit, worker_id)
         policy = PolicyEngine(PolicyConfig(repo_root=settings.repo_root))
         worker_actor = Actor(actor_id=worker_id, role=settings.worker_role)
@@ -131,6 +137,7 @@ def main() -> int:
             audit=audit,
             worker_id=worker_id,
             execution_guard=guard,
+            memory=memory,
         )
         stopping = Event()
         signal.signal(signal.SIGTERM, lambda *_: stopping.set())
@@ -141,6 +148,7 @@ def main() -> int:
             if result is not None:
                 print(f"{result.task.id} {result.task.state.value}", flush=True)
             stopping.wait(0.5)
+        memory.close()
     return 0
 
 

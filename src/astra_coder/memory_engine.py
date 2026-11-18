@@ -22,7 +22,7 @@ from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from pathlib import Path
 from threading import RLock
-from typing import Any, Final, cast
+from typing import Any, Final, Protocol, cast
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -32,10 +32,25 @@ from .redaction import SecretRedactor
 SCHEMA_VERSION: Final[int] = 1
 DEFAULT_DATABASE_PATH: Final[str] = "astramind_memory.db"
 DEFAULT_NAMESPACE: Final[str] = "default"
+DEFAULT_AUDIT_ACTOR: Final[str] = "memory-engine"
 MAX_QUERY_LIMIT: Final[int] = 100
 MAX_EXPORT_LIMIT: Final[int] = 100_000
 _NAMESPACE_PATTERN: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9_.:-]{1,64}$")
 _TOKEN_PATTERN: Final[re.Pattern[str]] = re.compile(r"\w+", re.UNICODE)
+
+
+class MemoryAuditSink(Protocol):
+    """Durable audit boundary used by the memory engine."""
+
+    def append(
+        self,
+        actor: str,
+        action: str,
+        target: str,
+        decision: str,
+        metadata: dict[str, Any] | None = None,
+    ) -> object: ...
+
 
 _SCHEMA: Final[str] = """
 CREATE TABLE IF NOT EXISTS memories (
@@ -207,8 +222,12 @@ class AstraMemoryEngine:
         secret_values: Iterable[str] = (),
         redactor: SecretRedactor | None = None,
         clock: Callable[[], datetime] | None = None,
+        audit: MemoryAuditSink | None = None,
+        audit_actor: str = DEFAULT_AUDIT_ACTOR,
         config: MemoryEngineConfig | None = None,
     ) -> None:
+        if not audit_actor.strip():
+            raise ValueError("audit_actor must not be empty")
         if config is None:
             config = MemoryEngineConfig(
                 database_path=str(database_path),
@@ -224,6 +243,8 @@ class AstraMemoryEngine:
         self.config = config
         self._clock = clock or _utcnow
         self._redactor = redactor or SecretRedactor(secret_values)
+        self._audit = audit
+        self._audit_actor = audit_actor
         self._lock = RLock()
         self._connection: sqlite3.Connection | None = None
         self._closed = False
@@ -275,6 +296,26 @@ class AstraMemoryEngine:
         if self._closed or self._connection is None:
             raise MemoryEngineError("memory engine is closed")
         return self._connection
+
+    def _append_audit(
+        self,
+        action: str,
+        target: str,
+        decision: str,
+        metadata: dict[str, Any],
+    ) -> None:
+        if self._audit is None:
+            return
+        try:
+            self._audit.append(
+                self._audit_actor,
+                action,
+                target,
+                decision,
+                metadata,
+            )
+        except Exception as exc:
+            raise MemoryEngineError("memory audit sink failed") from exc
 
     def _migrate(self) -> None:
         with self._lock, self._db() as connection:
@@ -368,6 +409,20 @@ class AstraMemoryEngine:
             raise MemoryEngineError("memory could not be read back after save")
         entry = self._row_to_entry(row)
         self._enforce_retention(namespace=target_namespace)
+        self._append_audit(
+            "memory_remember",
+            f"memory:{entry.id}",
+            "stored",
+            {
+                "memory_id": str(entry.id),
+                "namespace": entry.namespace,
+                "content_hash": entry.content_hash,
+                "status": entry.status.value,
+                "tags": list(entry.tags),
+                "importance": entry.importance,
+                "expires_at": entry.expires_at.isoformat() if entry.expires_at else None,
+            },
+        )
         return entry
 
     def save_memory(self, context: str, solution: str, status: str = "SUCCESS") -> MemoryEntry:
@@ -471,13 +526,29 @@ class AstraMemoryEngine:
     def forget(self, memory_id: UUID | str) -> bool:
         with self._lock, self._db() as connection:
             cursor = connection.execute("DELETE FROM memories WHERE id = ?", (str(memory_id),))
-            return cursor.rowcount > 0
+            deleted = cursor.rowcount > 0
+        if deleted:
+            self._append_audit(
+                "memory_forget",
+                f"memory:{memory_id}",
+                "deleted",
+                {"memory_id": str(memory_id)},
+            )
+        return deleted
 
     def forget_namespace(self, namespace: str) -> int:
         target = _require_namespace(namespace)
         with self._lock, self._db() as connection:
             cursor = connection.execute("DELETE FROM memories WHERE namespace = ?", (target,))
-            return cursor.rowcount
+            deleted = cursor.rowcount
+        if deleted:
+            self._append_audit(
+                "memory_forget_namespace",
+                f"memory_namespace:{target}",
+                "deleted",
+                {"namespace": target, "deleted": deleted},
+            )
+        return deleted
 
     def prune(self) -> int:
         """Delete expired memories and then the lowest-value excess entries."""
@@ -494,7 +565,15 @@ class AstraMemoryEngine:
                 "LIMIT -1 OFFSET ?)",
                 (self.config.max_entries,),
             ).rowcount
-        return max(0, expired) + max(0, excess)
+        removed = max(0, expired) + max(0, excess)
+        if removed:
+            self._append_audit(
+                "memory_prune",
+                "memory_store",
+                "deleted",
+                {"expired": max(0, expired), "excess": max(0, excess), "removed": removed},
+            )
+        return removed
 
     def export(self, *, namespace: str | None = None) -> tuple[MemoryEntry, ...]:
         target = _require_namespace(namespace) if namespace is not None else None
@@ -598,8 +677,10 @@ class AstraMemoryEngine:
 
 __all__ = [
     "AstraMemoryEngine",
+    "DEFAULT_AUDIT_ACTOR",
     "DEFAULT_DATABASE_PATH",
     "DEFAULT_NAMESPACE",
+    "MemoryAuditSink",
     "MemoryEngineConfig",
     "MemoryEngineError",
     "MemoryEntry",

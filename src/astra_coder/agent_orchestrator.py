@@ -12,10 +12,11 @@ from __future__ import annotations
 import re
 import time
 from collections.abc import Callable, Iterable, Sequence
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import Future
 from datetime import UTC, datetime
 from enum import StrEnum
-from threading import RLock
+from queue import Queue
+from threading import RLock, Thread
 from typing import Any, Final
 from uuid import UUID, uuid4
 
@@ -26,7 +27,7 @@ from .redaction import SecretRedactor
 MAX_AGENTS: Final[int] = 64
 MAX_TASKS: Final[int] = 1_000
 MAX_WORKERS: Final[int] = 32
-MAX_ATTEMPTS: Final[int] = 10
+MAX_ATTEMPTS: Final[int] = 3
 _AGENT_NAME_PATTERN: Final[re.Pattern[str]] = re.compile(r"^[A-Za-z0-9_.:-]{1,64}$")
 
 
@@ -119,6 +120,7 @@ class OrchestrationReport(BaseModel):
     finished_at: datetime
     timeout_seconds: float = Field(gt=0.0)
     results: tuple[AgentResult, ...] = ()
+    abandoned_task_ids: tuple[UUID, ...] = ()
 
     @property
     def total(self) -> int:
@@ -141,6 +143,10 @@ class OrchestrationReport(BaseModel):
         return sum(1 for result in self.results if result.status is AgentStatus.TIMED_OUT)
 
     @property
+    def abandoned(self) -> int:
+        return len(self.abandoned_task_ids)
+
+    @property
     def all_succeeded(self) -> bool:
         return self.total > 0 and self.succeeded == self.total
 
@@ -152,6 +158,71 @@ class OrchestrationReport(BaseModel):
 AgentHandler = Callable[[AgentTask], str]
 Clock = Callable[[], datetime]
 Sleeper = Callable[[float], None]
+
+
+_ExecutorItem = tuple[
+    Callable[..., AgentResult], tuple[Any, ...], dict[str, Any], Future[AgentResult]
+]
+
+
+class _DaemonExecutor:
+    """Small bounded executor whose workers cannot keep the process alive.
+
+    ``ThreadPoolExecutor`` creates non-daemon workers, so a handler that ignores
+    its deadline can delay interpreter shutdown after the orchestrator returns.
+    These workers are daemonized and tracked by the executor instance; a late
+    handler is still quarantined, never accepted as a result.
+    """
+
+    def __init__(self, max_workers: int) -> None:
+        self._queue: Queue[_ExecutorItem | None] = Queue()
+        self._lock = RLock()
+        self._shutdown = False
+        self._threads = [
+            Thread(
+                target=self._worker,
+                name=f"astra-agent-{index}",
+                daemon=True,
+            )
+            for index in range(max_workers)
+        ]
+        for thread in self._threads:
+            thread.start()
+
+    def submit(
+        self,
+        fn: Callable[..., AgentResult],
+        /,
+        *args: Any,
+        **kwargs: Any,
+    ) -> Future[AgentResult]:
+        future: Future[AgentResult] = Future()
+        with self._lock:
+            if self._shutdown:
+                raise RuntimeError("executor is shut down")
+            self._queue.put((fn, args, kwargs, future))
+        return future
+
+    def _worker(self) -> None:
+        while True:
+            item = self._queue.get()
+            if item is None:
+                return
+            fn, args, kwargs, future = item
+            if not future.set_running_or_notify_cancel():
+                continue
+            try:
+                future.set_result(fn(*args, **kwargs))
+            except BaseException as exc:  # noqa: BLE001
+                future.set_exception(exc)
+
+    def shutdown(self) -> None:
+        with self._lock:
+            if self._shutdown:
+                return
+            self._shutdown = True
+        for _ in self._threads:
+            self._queue.put(None)
 
 
 class AstraAgent:
@@ -279,7 +350,13 @@ class AstraOrchestrator:
         *,
         timeout_seconds: float | None = None,
     ) -> OrchestrationReport:
-        """Run every task on a round-robin agent and return ordered results."""
+        """Run every task on a round-robin agent and return ordered results.
+
+        A timed-out handler is quarantined: its result is never accepted, the
+        caller returns without waiting for the handler, and the task ID appears
+        in ``abandoned_task_ids``. Hard termination requires an out-of-process
+        runner; this in-process fan-out cannot safely kill a running thread.
+        """
         if len(task_list) > MAX_TASKS:
             raise OrchestrationError(f"task limit of {MAX_TASKS} exceeded")
         tasks = [
@@ -302,16 +379,17 @@ class AstraOrchestrator:
         workers = min(self._max_workers or len(agents), len(tasks), MAX_WORKERS, len(agents))
         futures: list[tuple[AgentTask, AstraAgent, Future[AgentResult]]] = []
         results: list[AgentResult] = []
-        with ThreadPoolExecutor(
-            max_workers=max(1, workers), thread_name_prefix="astra-agent"
-        ) as executor:
+        abandoned: list[UUID] = []
+        executor = _DaemonExecutor(max_workers=max(1, workers))
+        try:
             for index, task in enumerate(tasks):
                 agent = agents[index % len(agents)]
                 futures.append((task, agent, executor.submit(agent.execute, task)))
             failed_seen = False
             for task, agent, future in futures:
                 if self.fail_fast and failed_seen:
-                    future.cancel()
+                    if not future.cancel() and not future.done():
+                        abandoned.append(task.id)
                     now = self._clock()
                     results.append(
                         AgentResult(
@@ -329,7 +407,8 @@ class AstraOrchestrator:
                 try:
                     result = future.result(timeout=timeout)
                 except TimeoutError:
-                    future.cancel()
+                    if not future.cancel() and not future.done():
+                        abandoned.append(task.id)
                     now = self._clock()
                     result = AgentResult(
                         task_id=task.id,
@@ -344,11 +423,14 @@ class AstraOrchestrator:
                 results.append(result)
                 if not result.succeeded and result.status is not AgentStatus.CANCELLED:
                     failed_seen = True
+        finally:
+            executor.shutdown()
         return OrchestrationReport(
             started_at=started_at,
             finished_at=self._clock(),
             timeout_seconds=timeout,
             results=tuple(results),
+            abandoned_task_ids=tuple(abandoned),
         )
 
 

@@ -11,6 +11,7 @@ from pathlib import Path
 from .agents import ArchitectAgent, EditorAgent, IndependentReviewerAgent
 from .docker_tools import DockerToolMesh
 from .git_safety import GitSafety
+from .memory_engine import AstraMemoryEngine, MemoryEngineError, MemoryStatus
 from .orchestrator import (
     OrchestrationBlocked,
     OrchestrationResult,
@@ -395,6 +396,7 @@ class TaskWorker:
         worker_id: str = "astra-worker",
         execution_guard: ExecutionGuard | None = None,
         workspace_validator: WorkspaceValidator | None = None,
+        memory: AstraMemoryEngine | None = None,
     ) -> None:
         self._orchestrator_factory = orchestrator_factory
         self._worktree_factory = worktree_factory
@@ -402,6 +404,7 @@ class TaskWorker:
         self._audit = audit
         self._worker_id = worker_id
         self._execution_guard = execution_guard
+        self._memory = memory
         self._workspace_validator = workspace_validator or (
             worktree_factory.validate if isinstance(worktree_factory, GitWorktreeFactory) else None
         )
@@ -426,6 +429,23 @@ class TaskWorker:
             )
         orchestrator = self._orchestrator_factory(workspace)
         return orchestrator.run(task, context, workspace=workspace)
+
+    def _remember_outcome(self, task: Task) -> None:
+        """Record a terminal worker outcome when the optional memory store is present."""
+        if self._memory is None:
+            return
+        status = MemoryStatus.SUCCESS if task.state is TaskState.SUCCEEDED else MemoryStatus.FAILURE
+        try:
+            self._memory.remember(
+                f"task {task.id}: {task.prompt[:500]}",
+                f"terminal state {task.state.value}; {task.failure_reason or 'no failure reason'}",
+                status=status,
+                tags=("worker", f"state:{task.state.value}"),
+                importance=0.8 if status is MemoryStatus.SUCCESS else 0.5,
+            )
+        except MemoryEngineError:
+            # Memory is advisory and must never rewrite terminal task evidence.
+            return
 
     def run_next(self, context_factory: ContextFactory) -> OrchestrationResult | None:
         """Claim and execute one queued task; never execute directly from the API process."""
@@ -478,4 +498,5 @@ class TaskWorker:
                 ),
             },
         )
+        self._remember_outcome(result.task)
         return result
