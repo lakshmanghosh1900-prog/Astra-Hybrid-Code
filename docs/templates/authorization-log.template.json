@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_type": "ASTRA_CODER_AUTHORIZATION_AUDIT_LOG",
+  "repository": "lakshmanghosh1900-prog/Astra-Hybrid-Code",
+  "events": [
+    {
+      "event_id": "REPLACE_WITH_UNIQUE_ID",
+      "event_type": "AUTHORIZATION_REQUEST",
+      "stage": "05b",
+      "actor_type": "HUMAN_OPERATOR",
+      "actor_identity": null,
+      "authorization_id": null,
+      "timestamp_utc": null,
+      "decision": "PENDING",
+      "evidence_reference": null,
+      "previous_event_hash": null,
+      "event_sha256": null
+    }
+  ],
+  "integrity": {
+    "append_only": true,
+    "tamper_evident": true,
+    "hash_algorithm": "SHA-256",
+    "verified": false
+  }
+}

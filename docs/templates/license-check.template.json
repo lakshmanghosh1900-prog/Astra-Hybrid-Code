@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_type": "ASTRA_CODER_LICENSE_COMPLIANCE",
+  "artifact_status": "PENDING_VALIDATION",
+
+  "repository": "lakshmanghosh1900-prog/Astra-Hybrid-Code",
+  "target_branch": "feat/05b-rea",
+  "stage": "05b",
+
+  "validation_scope": {
+    "production_dependencies": true,
+    "development_dependencies": true,
+    "transitive_dependencies": true,
+    "containers": true,
+    "models_and_datasets": true,
+    "external_services": true
+  },
+
+  "evidence": {
+    "sbom_path": null,
+    "sbom_sha256": null,
+    "dependency_lockfiles": [],
+    "scanner_name": null,
+    "scanner_version": null,
+    "scan_run_id": null,
+    "scan_timestamp_utc": null
+  },
+
+  "license_inventory": [],
+
+  "policy": {
+    "allowlist": [],
+    "denylist": [],
+    "unknown_license_policy": "BLOCK",
+    "copyleft_review_required": true,
+    "commercial_use_review_required": true,
+    "model_license_review_required": true
+  },
+
+  "compliance_review": {
+    "reviewer": null,
+    "reviewer_identity": null,
+    "review_timestamp_utc": null,
+    "findings": [],
+    "exceptions": [],
+    "exception_approval_reference": null
+  },
+
+  "result": {
+    "status": "NOT_VALIDATED",
+    "blocking_findings": [],
+    "approved_for_stage_05b": false
+  },
+
+  "governance": {
+    "missing_evidence_fails_closed": true,
+    "unknown_license_fails_closed": true,
+    "self_certification_by_executor": false
+  }
+}
