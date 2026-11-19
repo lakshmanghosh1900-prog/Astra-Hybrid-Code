@@ -91,3 +91,47 @@
 - PR #17 must NOT merge until report matches evidence and blockers are tracked
 - PR #11 remains OPEN, DO NOT MERGE
 - Next: strictly read-only Stage 05b security audit, no file modification, no REA execution
+
+## Hardening Update - 2026-11-20 - PARTIAL, NOT CERTIFIED
+
+- Status unchanged: STAGE 05b - PARTIAL - NOT CERTIFIED (per Section 12 rule; see below)
+- Branch: fix/stage05b-security-hardening (from 9f987ff); work in working tree, NOT committed (awaiting explicit human confirmation for commit/push/PR)
+- Full evidence: reports/stage05b-security-hardening-report.md
+
+### Blockers A-E from 2026-11-19 audit - RESOLVED (local evidence)
+
+- A. Append-only + chain verification: RESOLVED - verify_event_chain() verifies full existing chain before any write; integrity.verified only set after complete verification; atomic temp+fsync+os.replace. T-LOG-A (file unchanged on tamper), T-LOG-B (prior events preserved), 10 tamper variants PASS. Note: logical append-only (full-document atomic replace), NOT byte-level - limitation documented, no false claim.
+- B. Malformed expiry fail-open: RESOLVED - canonical nested authorization.expires_at_utc enforced; missing/malformed/naive/non-string -> deny; conflicting root+nested -> deny; boundary now > expires. T-R1-A/B/C/D/E/F PASS.
+- C. Path traversal escape: RESOLVED - resolve() + is_relative_to(root) containment; traversal, absolute external, symlink/junction escape all deny. T-R3-A/B/C PASS.
+- D. Hash .lower() normalization: RESOLVED - _strict_sha256() fullmatch [0-9a-f]{64}, no normalization; uppercase/garbage deny. Malformed-input tests PASS.
+- E. Signature except-clause: RESOLVED - InvalidSignature / (ValueError, TypeError incl. binascii) / broad Exception all deny with distinguishable reasons; fail-closed on every path.
+- F-RBAC gate-level gap (from findings): RESOLVED - enforce_rea_gate propagates approver_id/self_certified; EXECUTOR/AGENT + APPROVE/RUN without identified approver -> deny. T-RBAC-A/B PASS.
+
+### Check results (2026-11-20, local)
+
+- REA enforcement tests: 55 passed, 0 skipped (15 mandatory adversarial IDs all present + malformed-input suite + original 3)
+- Full suite: 453 passed, 2 skipped (pre-existing platform symlink skips, unchanged from baseline 401+2), 1 warning
+- ruff check: All checks passed (66 files formatted)
+- mypy: Success, no issues in 38 source files
+- semgrep: 5 rules on 70 files, 0 findings (exit 0)
+- Schema: authorization.json / license-check.json / rea-input-manifest.json VALID vs docs/schemas/*; receipt+log schemas validated in tests
+- Protected reports/worker-smoke.json SHA-256 unchanged: 3045C669207D0ADDCDF117EA37B6CBF82E595C67FA6AAAD018B3B6645326D5D8 - OK
+
+### Why still PARTIAL, NOT CERTIFIED (Section 12 rule)
+
+- Independent security review: NOT PROVEN (implementer self-review only)
+- CI evidence: NOT AVAILABLE (nothing pushed; requires human confirmation)
+- Human approval for merge/certification: PENDING
+- Shipped authorization.json signature block (cryptographic_proof.signature, hex) is not gate-verifiable (no public key in repo) - gate denies fail-closed; smallest schema-compatible correction is a human-side PROPOSAL ONLY (see hardening report section 8); no signature fabricated, no artifact altered
+
+### Scope discipline
+
+- No Stage 06 / Worker / REA execution performed
+- No human artifact signing
+- No destructive git operations
+- PR #11 and PR #17 remain OPEN, NOT merged
+- Files changed (uncommitted): src/astra_coder/rea/{__init__,gate,rbac,receipt}.py, tests/unit/rea/test_rea_enforcement.py, reports/stage05b-security-hardening-report.md, reports/stage05b-closure-report.md
+
+### Next action
+
+- Human operator to explicitly confirm commit + push + PR for fix/stage05b-security-hardening; then collect CI evidence, obtain independent review, and make the merge/certification decision

@@ -2,7 +2,7 @@
 
 from .gate import ReaGateResult, enforce_rea_gate
 from .rbac import RbacDecision, evaluate_rbac
-from .receipt import append_audit_event, build_execution_receipt
+from .receipt import append_audit_event, build_execution_receipt, verify_event_chain
 
 __all__ = [
     "RbacDecision",
@@ -11,4 +11,5 @@ __all__ = [
     "enforce_rea_gate",
     "build_execution_receipt",
     "append_audit_event",
+    "verify_event_chain",
 ]

@@ -115,6 +115,22 @@ def evaluate_rbac(
             reason="Self-authorization by executor/agent is prohibited",
         )
 
+    if (
+        clean_action in {"APPROVE_STAGE_05B", "RUN_REA_EXECUTION"}
+        and clean_role in {"EXECUTOR", "AGENT"}
+        and not (approver_id or "").strip()
+    ):
+        return RbacDecision(
+            allowed=False,
+            actor_id=clean_actor,
+            role=clean_role,
+            action=clean_action,
+            reason=(
+                "Independent approver_id required: EXECUTOR/AGENT cannot run or "
+                "certify Stage 05b without an identified approver"
+            ),
+        )
+
     allowed_actions = _ROLE_PERMISSIONS[clean_role]
     if clean_action not in allowed_actions:
         return RbacDecision(
