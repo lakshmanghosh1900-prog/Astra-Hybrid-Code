@@ -1,6 +1,6 @@
 ﻿# Schema-to-Projection Consistency Review (2026-11-19)
 
-- **Target Policy:** docs/design/source-policy.md (129 lines, 5419 bytes, VERIFIED)
+- **Target Policy:** docs/design/source-policy.md (129 lines, 5585 bytes, VERIFIED)
 - **Codebase Root:** C:\Users\User\Desktop\ASTRA CODER\src\astra_coder
 - **Existing Schemas:**
   - docs/schemas/authorization-log.schema.json
@@ -45,7 +45,21 @@
   8. Verified-byte handle: retention_days=180, immutable=true.
 - **Status:** SCHEMA CREATED + ALIGNED.
 
-## 5. Open Blockers & Notes
+## 5. Validation Evidence
+
+- **Receipt schema (Test-Json, PowerShell 7.7.0):**
+  - audit-only unsigned => True (decision #4)
+  - execution signed => True
+  - execution unsigned => False (execution receipts must be signed)
+  - ntp_drift_seconds 3.0 => False (decision #7, drift <= 2s)
+  - retention_days 30 => False (decision #8, retention 180)
+  - empty license_reference => False (minLength 1)
+  - missing license_reference => False (required)
+- **Python tests:** 398 passed, 2 skipped (full suite); tests/unit/license 4 passed.
+- **Lint/type:** ruff clean (src/astra_coder/license, tests/unit/license); mypy strict clean (4 source files).
+- **Schema JSON:** all docs/schemas/*.json parse as valid JSON.
+
+## 6. Open Blockers & Notes
 
 - R1/R2 runtime enforcement in REA adapter remains outside this scope.
 - No PR #11 merge, push, or deployment performed.
