@@ -1,4 +1,5 @@
 """Unit tests for RBAC, REA gate, execution receipt, and audit log."""
+
 from __future__ import annotations
 
 import base64
@@ -21,8 +22,13 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def test_rbac_enforces_roles_and_blocks_self_certification() -> None:
-    assert evaluate_rbac(actor_id="ops-1", role="HUMAN_APPROVER", action="APPROVE_STAGE_05B").allowed is True
-    assert evaluate_rbac(actor_id="agent-1", role="AGENT", action="APPROVE_STAGE_05B").allowed is False
+    assert (
+        evaluate_rbac(actor_id="ops-1", role="HUMAN_APPROVER", action="APPROVE_STAGE_05B").allowed
+        is True
+    )
+    assert (
+        evaluate_rbac(actor_id="agent-1", role="AGENT", action="APPROVE_STAGE_05B").allowed is False
+    )
     assert (
         evaluate_rbac(
             actor_id="exec-1",
@@ -34,9 +40,13 @@ def test_rbac_enforces_roles_and_blocks_self_certification() -> None:
     )
 
 
-def test_rea_gate_blocks_without_valid_signature_and_allows_with_valid_signature(tmp_path: Path) -> None:
+def test_rea_gate_blocks_without_valid_signature_and_allows_with_valid_signature(
+    tmp_path: Path,
+) -> None:
     for fname in ["authorization.json", "license-check.json", "rea-input-manifest.json"]:
-        (tmp_path / fname).write_text((REPO_ROOT / fname).read_text(encoding="utf-8"), encoding="utf-8")
+        (tmp_path / fname).write_text(
+            (REPO_ROOT / fname).read_text(encoding="utf-8"), encoding="utf-8"
+        )
 
     for rel in [
         "src/astra_coder/license/__init__.py",
@@ -67,7 +77,9 @@ def test_rea_gate_blocks_without_valid_signature_and_allows_with_valid_signature
         "key_id": "test-key-01",
         "signature_base64": sig_b64,
     }
-    (tmp_path / "authorization.json").write_text(json.dumps(auth_obj, indent=2) + "\n", encoding="utf-8")
+    (tmp_path / "authorization.json").write_text(
+        json.dumps(auth_obj, indent=2) + "\n", encoding="utf-8"
+    )
 
     man_obj = json.loads((tmp_path / "rea-input-manifest.json").read_text(encoding="utf-8"))
     for item in man_obj.get("inputs") or []:
@@ -81,19 +93,29 @@ def test_rea_gate_blocks_without_valid_signature_and_allows_with_valid_signature
     man_obj["license_reference"]["sha256"] = hashlib.sha256(
         (tmp_path / "license-check.json").read_bytes()
     ).hexdigest()
-    (tmp_path / "rea-input-manifest.json").write_text(json.dumps(man_obj, indent=2) + "\n", encoding="utf-8")
+    (tmp_path / "rea-input-manifest.json").write_text(
+        json.dumps(man_obj, indent=2) + "\n", encoding="utf-8"
+    )
 
-    blocked = enforce_rea_gate(repo_root=tmp_path, actor_id="agent-1", role="AGENT", public_key_pem=pub_pem)
+    blocked = enforce_rea_gate(
+        repo_root=tmp_path, actor_id="agent-1", role="AGENT", public_key_pem=pub_pem
+    )
     assert blocked.allowed is False
 
-    allowed = enforce_rea_gate(repo_root=tmp_path, actor_id="ops-1", role="HUMAN_APPROVER", public_key_pem=pub_pem)
+    allowed = enforce_rea_gate(
+        repo_root=tmp_path, actor_id="ops-1", role="HUMAN_APPROVER", public_key_pem=pub_pem
+    )
     assert allowed.allowed is True
     assert allowed.blocking_reasons == []
 
 
 def test_receipt_and_audit_log_conform_to_schemas(tmp_path: Path) -> None:
-    receipt_schema = json.loads((REPO_ROOT / "docs/schemas/execution-receipt.schema.json").read_text(encoding="utf-8"))
-    log_schema = json.loads((REPO_ROOT / "docs/schemas/authorization-log.schema.json").read_text(encoding="utf-8"))
+    receipt_schema = json.loads(
+        (REPO_ROOT / "docs/schemas/execution-receipt.schema.json").read_text(encoding="utf-8")
+    )
+    log_schema = json.loads(
+        (REPO_ROOT / "docs/schemas/authorization-log.schema.json").read_text(encoding="utf-8")
+    )
 
     sample_hash = "90bdb412b86bcc6790b5c9e4107634c96be133f65a0070ce52e483f603d4f614"
     receipt = build_execution_receipt(

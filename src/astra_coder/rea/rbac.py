@@ -1,4 +1,5 @@
 """Strict RBAC policy enforcement for Stage 05b REA governance."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

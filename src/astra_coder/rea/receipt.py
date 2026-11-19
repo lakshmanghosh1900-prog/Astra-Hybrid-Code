@@ -1,4 +1,5 @@
 """Execution receipt builder and hash-chained audit log writer."""
+
 from __future__ import annotations
 
 import hashlib

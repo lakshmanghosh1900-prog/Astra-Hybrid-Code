@@ -165,10 +165,8 @@ def enforce_rea_gate(
     r2_ok = (lic_status == "PASS") and stage_approved and (dec_obj.decision == "ALLOW")
     if not r2_ok:
         reasons.append(
-            (
-                f"R2 license gate failed: status={lic_status}, "
-                f"approved_for_stage_05b={stage_approved}, decision={dec_obj.decision}"
-            )
+            f"R2 license gate failed: status={lic_status}, "
+            f"approved_for_stage_05b={stage_approved}, decision={dec_obj.decision}"
         )
     checks["r2_license_approved"] = r2_ok
 
