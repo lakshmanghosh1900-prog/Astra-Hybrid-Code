@@ -1,4 +1,4 @@
-﻿"""Runtime implementation of license_reference process obligations."""
+"""Runtime implementation of license_reference process obligations."""
 
 from .decision import LicenseDecisionRecord, evaluate_license_decision
 from .resolve_reference import ReferenceResolutionResult, resolve_license_reference

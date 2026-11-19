@@ -1,4 +1,4 @@
-﻿"""Obligation 2: SHA-256 digest verification."""
+"""Obligation 2: SHA-256 digest verification."""
 
 from __future__ import annotations
 

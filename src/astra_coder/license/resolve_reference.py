@@ -1,4 +1,4 @@
-﻿"""Obligation 1: License reference resolution."""
+"""Obligation 1: License reference resolution."""
 
 from __future__ import annotations
 

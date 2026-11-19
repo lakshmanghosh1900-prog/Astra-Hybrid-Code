@@ -1,4 +1,4 @@
-﻿"""Unit tests for license_reference runtime obligations and receipt schema presence."""
+"""Unit tests for license_reference runtime obligations and receipt schema presence."""
 
 from __future__ import annotations
 
@@ -62,10 +62,7 @@ def test_digest_verification_and_decision_flow(tmp_path: Path) -> None:
 
 def test_execution_receipt_schema_valid_json() -> None:
     schema_path = (
-        Path(__file__).resolve().parents[3]
-        / "docs"
-        / "schemas"
-        / "execution-receipt.schema.json"
+        Path(__file__).resolve().parents[3] / "docs" / "schemas" / "execution-receipt.schema.json"
     )
     assert schema_path.exists()
     data = json.loads(schema_path.read_text(encoding="utf-8"))

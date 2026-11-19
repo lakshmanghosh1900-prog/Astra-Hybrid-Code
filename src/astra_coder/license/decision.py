@@ -1,4 +1,4 @@
-﻿"""Obligation 3: Separate license decision record."""
+"""Obligation 3: Separate license decision record."""
 
 from __future__ import annotations
 
