@@ -7,9 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from jsonschema import Draft202012Validator
+import pytest
 
 from astra_coder.rea import (
     append_audit_event,
@@ -22,31 +20,34 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 def test_rbac_enforces_roles_and_blocks_self_certification() -> None:
-    assert (
-        evaluate_rbac(actor_id="ops-1", role="HUMAN_APPROVER", action="APPROVE_STAGE_05B").allowed
-        is True
+    res_ok = evaluate_rbac(actor_id="ops-1", role="HUMAN_APPROVER", action="APPROVE_STAGE_05B")
+    assert res_ok.allowed is True
+
+    res_agent = evaluate_rbac(actor_id="agent-1", role="AGENT", action="APPROVE_STAGE_05B")
+    assert res_agent.allowed is False
+
+    res_self = evaluate_rbac(
+        actor_id="exec-1",
+        role="EXECUTOR",
+        action="RUN_REA_EXECUTION",
+        self_certified=True,
     )
-    assert (
-        evaluate_rbac(actor_id="agent-1", role="AGENT", action="APPROVE_STAGE_05B").allowed is False
-    )
-    assert (
-        evaluate_rbac(
-            actor_id="exec-1",
-            role="EXECUTOR",
-            action="RUN_REA_EXECUTION",
-            self_certified=True,
-        ).allowed
-        is False
-    )
+    assert res_self.allowed is False
 
 
 def test_rea_gate_blocks_without_valid_signature_and_allows_with_valid_signature(
     tmp_path: Path,
 ) -> None:
-    for fname in ["authorization.json", "license-check.json", "rea-input-manifest.json"]:
-        (tmp_path / fname).write_text(
-            (REPO_ROOT / fname).read_text(encoding="utf-8"), encoding="utf-8"
-        )
+    crypto = pytest.importorskip("cryptography")
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    assert crypto is not None
+
+    gate_files = ["authorization.json", "license-check.json", "rea-input-manifest.json"]
+    for fname in gate_files:
+        src_file = REPO_ROOT / fname
+        (tmp_path / fname).write_text(src_file.read_text(encoding="utf-8"), encoding="utf-8")
 
     for rel in [
         "src/astra_coder/license/__init__.py",
@@ -65,7 +66,8 @@ def test_rea_gate_blocks_without_valid_signature_and_allows_with_valid_signature
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
 
-    auth_obj = json.loads((tmp_path / "authorization.json").read_text(encoding="utf-8"))
+    auth_path = tmp_path / "authorization.json"
+    auth_obj = json.loads(auth_path.read_text(encoding="utf-8"))
     payload_bytes = json.dumps(
         {k: v for k, v in auth_obj.items() if k != "signature"},
         sort_keys=True,
@@ -77,25 +79,22 @@ def test_rea_gate_blocks_without_valid_signature_and_allows_with_valid_signature
         "key_id": "test-key-01",
         "signature_base64": sig_b64,
     }
-    (tmp_path / "authorization.json").write_text(
-        json.dumps(auth_obj, indent=2) + "\n", encoding="utf-8"
-    )
+    auth_path.write_text(json.dumps(auth_obj, indent=2) + "\n", encoding="utf-8")
 
-    man_obj = json.loads((tmp_path / "rea-input-manifest.json").read_text(encoding="utf-8"))
+    man_path = tmp_path / "rea-input-manifest.json"
+    man_obj = json.loads(man_path.read_text(encoding="utf-8"))
     for item in man_obj.get("inputs") or []:
         rel = item.get("source_path_or_uri")
         if rel and (tmp_path / rel).exists():
             item["sha256"] = hashlib.sha256((tmp_path / rel).read_bytes()).hexdigest()
 
     man_obj["authorization_reference"]["sha256"] = hashlib.sha256(
-        (tmp_path / "authorization.json").read_bytes()
+        auth_path.read_bytes()
     ).hexdigest()
     man_obj["license_reference"]["sha256"] = hashlib.sha256(
         (tmp_path / "license-check.json").read_bytes()
     ).hexdigest()
-    (tmp_path / "rea-input-manifest.json").write_text(
-        json.dumps(man_obj, indent=2) + "\n", encoding="utf-8"
-    )
+    man_path.write_text(json.dumps(man_obj, indent=2) + "\n", encoding="utf-8")
 
     blocked = enforce_rea_gate(
         repo_root=tmp_path, actor_id="agent-1", role="AGENT", public_key_pem=pub_pem
@@ -103,19 +102,23 @@ def test_rea_gate_blocks_without_valid_signature_and_allows_with_valid_signature
     assert blocked.allowed is False
 
     allowed = enforce_rea_gate(
-        repo_root=tmp_path, actor_id="ops-1", role="HUMAN_APPROVER", public_key_pem=pub_pem
+        repo_root=tmp_path,
+        actor_id="ops-1",
+        role="HUMAN_APPROVER",
+        public_key_pem=pub_pem,
     )
     assert allowed.allowed is True
     assert allowed.blocking_reasons == []
 
 
 def test_receipt_and_audit_log_conform_to_schemas(tmp_path: Path) -> None:
-    receipt_schema = json.loads(
-        (REPO_ROOT / "docs/schemas/execution-receipt.schema.json").read_text(encoding="utf-8")
-    )
-    log_schema = json.loads(
-        (REPO_ROOT / "docs/schemas/authorization-log.schema.json").read_text(encoding="utf-8")
-    )
+    jsonschema_mod = pytest.importorskip("jsonschema")
+    validator_cls = jsonschema_mod.Draft202012Validator
+
+    rcpt_schema_path = REPO_ROOT / "docs/schemas/execution-receipt.schema.json"
+    log_schema_path = REPO_ROOT / "docs/schemas/authorization-log.schema.json"
+    receipt_schema = json.loads(rcpt_schema_path.read_text(encoding="utf-8"))
+    log_schema = json.loads(log_schema_path.read_text(encoding="utf-8"))
 
     sample_hash = "90bdb412b86bcc6790b5c9e4107634c96be133f65a0070ce52e483f603d4f614"
     receipt = build_execution_receipt(
@@ -134,7 +137,7 @@ def test_receipt_and_audit_log_conform_to_schemas(tmp_path: Path) -> None:
         key_id="key-ed25519-01",
         recorded_at_utc="2026-11-19T15:00:00Z",
     )
-    Draft202012Validator(receipt_schema).validate(receipt)
+    validator_cls(receipt_schema).validate(receipt)
 
     log_file = tmp_path / "auth-log.json"
     ev1 = append_audit_event(
@@ -162,4 +165,4 @@ def test_receipt_and_audit_log_conform_to_schemas(tmp_path: Path) -> None:
     assert ev2["previous_event_hash"] == ev1["event_sha256"]
 
     log_doc = json.loads(log_file.read_text(encoding="utf-8"))
-    Draft202012Validator(log_schema).validate(log_doc)
+    validator_cls(log_schema).validate(log_doc)

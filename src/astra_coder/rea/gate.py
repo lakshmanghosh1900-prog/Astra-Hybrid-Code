@@ -9,8 +9,17 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from cryptography.exceptions import InvalidSignature
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+try:
+    from cryptography.exceptions import InvalidSignature
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
+    _HAS_CRYPTOGRAPHY = True
+except ImportError:  # pragma: no cover
+    InvalidSignature = Exception  # type: ignore[assignment,misc]
+    serialization = None  # type: ignore[assignment]
+    Ed25519PublicKey = None  # type: ignore[assignment,misc]
+    _HAS_CRYPTOGRAPHY = False
 
 from astra_coder.license import (
     evaluate_license_decision,
@@ -58,6 +67,9 @@ def _verify_r1_signature(auth_data: dict, public_key_pem: bytes | None) -> tuple
     if not isinstance(sig_b64, str) or not sig_b64.strip():
         return False, "Missing R1 Ed25519 signature value"
 
+    if not _HAS_CRYPTOGRAPHY or Ed25519PublicKey is None:
+        return False, "cryptography dependency unavailable for R1 signature verification"
+
     if public_key_pem is None:
         return False, "Missing Ed25519 public key for R1 verification"
 
@@ -76,8 +88,6 @@ def _verify_r1_signature(auth_data: dict, public_key_pem: bytes | None) -> tuple
 
 
 def _decode_pem_or_raw_public_key(raw: bytes) -> bytes:
-    from cryptography.hazmat.primitives import serialization
-
     text = raw.decode("utf-8", errors="ignore").strip()
     if "BEGIN PUBLIC KEY" in text:
         loaded = serialization.load_pem_public_key(raw)
