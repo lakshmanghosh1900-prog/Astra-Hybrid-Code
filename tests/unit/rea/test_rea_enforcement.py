@@ -5,13 +5,16 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import os
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import pytest
 
+from astra_coder.license import verify_sha256_digest
 from astra_coder.rea import (
     append_audit_event,
     build_execution_receipt,
@@ -25,7 +28,27 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 FIXED_NOW = datetime(2026, 11, 20, 12, 0, 0, tzinfo=UTC)
 
 
-def test_rbac_enforces_roles_and_blocks_self_certification() -> None:
+def _write_trusted_key(pub_pem: bytes) -> None:
+    key_path = Path(os.environ["ASTRA_REA_TRUSTED_KEYS_PATH"])
+    key_path.write_text(
+        json.dumps(
+            {
+                "keys": {
+                    "test-key-01": {
+                        "public_key_pem": pub_pem.decode("ascii"),
+                        "status": "ACTIVE",
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_rbac_enforces_roles_and_blocks_self_certification(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _write_trusted_approver(tmp_path, monkeypatch, approver_id="ops-1")
     res_ok = evaluate_rbac(actor_id="ops-1", role="HUMAN_APPROVER", action="APPROVE_STAGE_05B")
     assert res_ok.allowed is True
 
@@ -43,7 +66,9 @@ def test_rbac_enforces_roles_and_blocks_self_certification() -> None:
 
 def test_rea_gate_blocks_without_valid_signature_and_allows_with_valid_signature(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    _write_trusted_approver(tmp_path, monkeypatch, approver_id="ops-1")
     crypto = pytest.importorskip("cryptography")
     from cryptography.hazmat.primitives import serialization
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -71,6 +96,7 @@ def test_rea_gate_blocks_without_valid_signature_and_allows_with_valid_signature
         encoding=serialization.Encoding.PEM,
         format=serialization.PublicFormat.SubjectPublicKeyInfo,
     )
+    _write_trusted_key(pub_pem)
 
     auth_path = tmp_path / "authorization.json"
     auth_obj = json.loads(auth_path.read_text(encoding="utf-8"))
@@ -174,6 +200,38 @@ def test_receipt_and_audit_log_conform_to_schemas(tmp_path: Path) -> None:
     validator_cls(log_schema).validate(log_doc)
 
 
+def _write_trusted_approver(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    approver_id: str = "ops-1",
+    allowed_actions: list[str] | None = None,
+    status: str = "ACTIVE",
+    role: str = "HUMAN_APPROVER",
+) -> Path:
+    actions = (
+        ["APPROVE_STAGE_05B", "RUN_REA_EXECUTION"] if allowed_actions is None else allowed_actions
+    )
+    reg_path = tmp_path / "trusted-approvers.json"
+    reg_path.write_text(
+        json.dumps(
+            {
+                "approvers": {
+                    approver_id: {
+                        "role": role,
+                        "status": status,
+                        "allowed_actions": actions,
+                    }
+                }
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("ASTRA_REA_APPROVER_REGISTRY_PATH", str(reg_path))
+    return reg_path
+
+
 def _build_gate_fixture(
     tmp_path: Path,
     *,
@@ -212,6 +270,7 @@ def _build_gate_fixture(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
+        _write_trusted_key(pub_pem)
         payload = {k: v for k, v in auth_obj.items() if k != "signature"}
         payload_bytes = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
         sig_b64 = base64.b64encode(priv.sign(payload_bytes)).decode("ascii")
@@ -329,7 +388,10 @@ def test_t_r1_e_conflicting_expiry_locations_denies_gate(tmp_path: Path) -> None
     assert any("conflicting expires_at_utc" in r for r in res.blocking_reasons)
 
 
-def test_t_r1_f_expiry_boundary_is_inclusive(tmp_path: Path) -> None:
+def test_t_r1_f_expiry_boundary_is_inclusive(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _write_trusted_approver(tmp_path, monkeypatch, approver_id="ops-1")
     root, pub = _build_gate_fixture(tmp_path)
     at_expiry = _run_gate(root, pub, now_utc=datetime(2026, 12, 19, 13, 6, 0, tzinfo=UTC))
     assert at_expiry.allowed is True
@@ -552,7 +614,8 @@ def test_t_rbac_a_same_actor_approver_denied_via_gate(tmp_path: Path) -> None:
     res = _run_gate(root, pub, actor_id="exec-1", role="EXECUTOR", approver_id="exec-1")
     assert res.allowed is False
     assert any(
-        "Self-authorization by executor/agent is prohibited" in r for r in res.blocking_reasons
+        "Self-authorization by executor/agent/operator is prohibited" in r
+        for r in res.blocking_reasons
     )
     res2 = _run_gate(
         root,
@@ -581,7 +644,7 @@ def test_t_rbac_b_gate_level_self_certification_denied(tmp_path: Path) -> None:
 
     res2 = _run_gate(root, pub, actor_id="exec-1", role="EXECUTOR")
     assert res2.allowed is False
-    assert any("Independent approver_id required" in r for r in res2.blocking_reasons)
+    assert any("Independent trusted approver required" in r for r in res2.blocking_reasons)
 
     res3 = _run_gate(
         root,
@@ -753,3 +816,242 @@ def test_malformed_or_tampered_audit_log_rejected(tmp_path: Path, tamper: str) -
             timestamp_utc="2026-11-19T15:00:03Z",
         )
     assert log_file.read_bytes() == before
+
+
+def test_attacker_supplied_key_cannot_authorize(tmp_path: Path) -> None:
+    pytest.importorskip("cryptography")
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    root, _ = _build_gate_fixture(tmp_path)
+    attacker = Ed25519PrivateKey.generate()
+    attacker_pub = attacker.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    auth_path = root / "authorization.json"
+    auth_obj = json.loads(auth_path.read_text(encoding="utf-8"))
+    payload = {k: v for k, v in auth_obj.items() if k != "signature"}
+    payload_bytes = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    auth_obj["signature"]["signature_base64"] = base64.b64encode(
+        attacker.sign(payload_bytes)
+    ).decode("ascii")
+    auth_path.write_text(json.dumps(auth_obj, indent=2) + "\n", encoding="utf-8")
+    _edit_manifest(
+        root,
+        lambda m: m["authorization_reference"].update(
+            sha256=hashlib.sha256(auth_path.read_bytes()).hexdigest()
+        ),
+    )
+
+    res = _run_gate(root, attacker_pub)
+    assert res.allowed is False
+    assert any("signature does not match payload" in r for r in res.blocking_reasons)
+
+
+def test_unknown_key_id_is_denied(tmp_path: Path) -> None:
+    pytest.importorskip("cryptography")
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    root, _ = _build_gate_fixture(tmp_path)
+    attacker = Ed25519PrivateKey.generate()
+    attacker_pub = attacker.public_key().public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    auth_path = root / "authorization.json"
+    auth_obj = json.loads(auth_path.read_text(encoding="utf-8"))
+    payload = {k: v for k, v in auth_obj.items() if k != "signature"}
+    payload_bytes = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    auth_obj["signature"] = {
+        "algorithm": "Ed25519",
+        "key_id": "attacker-key",
+        "signature_base64": base64.b64encode(attacker.sign(payload_bytes)).decode("ascii"),
+    }
+    auth_path.write_text(json.dumps(auth_obj, indent=2) + "\n", encoding="utf-8")
+    _edit_manifest(
+        root,
+        lambda m: m["authorization_reference"].update(
+            sha256=hashlib.sha256(auth_path.read_bytes()).hexdigest()
+        ),
+    )
+
+    res = _run_gate(root, attacker_pub)
+    assert res.allowed is False
+    assert any("Unknown R1 key_id: attacker-key" in r for r in res.blocking_reasons)
+
+
+def test_signed_rejected_decision_is_denied(tmp_path: Path) -> None:
+    root, pub = _build_gate_fixture(
+        tmp_path,
+        auth_mutator=lambda a: a["authorization"].update(approval_decision="REJECTED"),
+    )
+    res = _run_gate(root, pub)
+    assert res.allowed is False
+    assert any("approval_decision must be APPROVED" in r for r in res.blocking_reasons)
+
+
+def test_fabricated_approver_is_denied(tmp_path: Path) -> None:
+    root, pub = _build_gate_fixture(tmp_path)
+    res = _run_gate(
+        root,
+        pub,
+        actor_id="exec-1",
+        role="EXECUTOR",
+        approver_id="fabricated-999",
+    )
+    assert res.allowed is False
+    assert any("Unknown or untrusted approver_id" in r for r in res.blocking_reasons)
+
+
+def test_non_string_rbac_inputs_denied_without_attribute_error() -> None:
+    result = evaluate_rbac(
+        actor_id=123,  # type: ignore[arg-type]
+        role=[],  # type: ignore[arg-type]
+        action={},  # type: ignore[arg-type]
+        approver_id=42,  # type: ignore[arg-type]
+        self_certified="yes",  # type: ignore[arg-type]
+        approver_context=[],  # type: ignore[arg-type]
+    )
+    assert result.allowed is False
+    assert result.reason == "Invalid RBAC input types"
+
+
+def test_naive_now_denied(tmp_path: Path) -> None:
+    root, pub = _build_gate_fixture(tmp_path)
+    res = _run_gate(root, pub, now_utc=datetime(2026, 11, 20, 12, 0, 0))
+    assert res.allowed is False
+    assert any("timezone-aware" in r for r in res.blocking_reasons)
+
+
+def test_caller_supplied_now_requires_test_clock(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root, pub = _build_gate_fixture(tmp_path)
+    monkeypatch.delenv("ASTRA_REA_TEST_CLOCK", raising=False)
+    res = _run_gate(root, pub)
+    assert res.allowed is False
+    assert any("Caller-supplied now_utc is not permitted" in r for r in res.blocking_reasons)
+
+
+def test_strict_digest_policy_rejects_normalization() -> None:
+    content = b"digest-input"
+    valid = hashlib.sha256(content).hexdigest()
+    assert verify_sha256_digest(content, valid).status == "VERIFIED"
+    for bad in [valid.upper(), f" {valid}", f"{valid}\n", valid[:-1], f"{valid}0", 123]:
+        assert verify_sha256_digest(content, bad).status == "UNVERIFIED"
+
+
+def _append_concurrent_event(log_file: Path, event_id: str) -> None:
+    append_audit_event(
+        log_file,
+        event_id=event_id,
+        event_type="STAGE_05B_GATE_EVALUATED",
+        actor_type="SYSTEM_VERIFIER",
+        actor_identity="rea-gate",
+        authorization_id="auth-05b",
+        decision="APPROVED",
+        evidence_reference=event_id,
+        timestamp_utc="2026-11-19T15:00:01Z",
+    )
+
+
+def test_concurrent_appends_preserve_every_event(tmp_path: Path) -> None:
+    log_file = tmp_path / "concurrent-log.json"
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        futures = [
+            pool.submit(_append_concurrent_event, log_file, f"evt-{index:03d}")
+            for index in range(1, 9)
+        ]
+        for future in futures:
+            future.result()
+
+    doc = json.loads(log_file.read_text(encoding="utf-8"))
+    assert len(doc["events"]) == 8
+    assert [event["sequence"] for event in doc["events"]] == list(range(1, 9))
+    verify_event_chain(doc["events"])
+
+
+def test_idempotency_replay_returns_existing_event(tmp_path: Path) -> None:
+    log_file = tmp_path / "idempotent-log.json"
+    kwargs = {
+        "event_id": "evt-001",
+        "event_type": "STAGE_05B_GATE_EVALUATED",
+        "actor_type": "SYSTEM_VERIFIER",
+        "actor_identity": "rea-gate",
+        "authorization_id": "auth-05b",
+        "decision": "APPROVED",
+        "evidence_reference": "rcpt-001",
+        "idempotency_key": "gate-run-001",
+        "operation_id": "attempt-001",
+    }
+    first = append_audit_event(log_file, timestamp_utc="2026-11-19T15:00:01Z", **kwargs)
+    replay = append_audit_event(log_file, timestamp_utc="2026-11-19T15:00:09Z", **kwargs)
+    assert replay == first
+
+    doc = json.loads(log_file.read_text(encoding="utf-8"))
+    assert len(doc["events"]) == 1
+
+    with pytest.raises(ValueError, match="reused with a different operation"):
+        append_audit_event(
+            log_file,
+            timestamp_utc="2026-11-19T15:00:10Z",
+            **{**kwargs, "evidence_reference": "rcpt-different"},
+        )
+
+
+def test_explicit_sequence_must_match_next_position(tmp_path: Path) -> None:
+    log_file = tmp_path / "sequence-log.json"
+    with pytest.raises(ValueError, match="sequence must be 1"):
+        append_audit_event(
+            log_file,
+            event_id="evt-001",
+            event_type="STAGE_05B_GATE_EVALUATED",
+            actor_type="SYSTEM_VERIFIER",
+            actor_identity="rea-gate",
+            authorization_id="auth-05b",
+            decision="APPROVED",
+            evidence_reference="rcpt-001",
+            sequence=2,
+        )
+
+
+def test_v03_unregistered_human_approver_role_spoof_denied(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    empty_reg = tmp_path / "empty-approvers.json"
+    empty_reg.write_text(json.dumps({"approvers": {}}), encoding="utf-8")
+    monkeypatch.setenv("ASTRA_REA_APPROVER_REGISTRY_PATH", str(empty_reg))
+
+    res_approve = evaluate_rbac(
+        actor_id="spoofed-approver",
+        role="HUMAN_APPROVER",
+        action="APPROVE_STAGE_05B",
+    )
+    assert res_approve.allowed is False
+
+    res_exec = evaluate_rbac(
+        actor_id="spoofed-approver",
+        role="HUMAN_APPROVER",
+        action="RUN_REA_EXECUTION",
+    )
+    assert res_exec.allowed is False
+
+
+def test_v03_empty_allowed_actions_denies_approval_and_execution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _write_trusted_approver(
+        tmp_path,
+        monkeypatch,
+        approver_id="restricted-approver",
+        allowed_actions=[],
+    )
+    res_exec = evaluate_rbac(
+        actor_id="exec-1",
+        role="EXECUTOR",
+        action="RUN_REA_EXECUTION",
+        approver_id="restricted-approver",
+    )
+    assert res_exec.allowed is False

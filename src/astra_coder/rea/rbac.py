@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Literal
+
+from .trust import validate_trusted_approver
 
 RoleName = Literal["HUMAN_APPROVER", "OPERATOR", "REVIEWER", "EXECUTOR", "AGENT"]
 ActionName = Literal[
@@ -41,6 +45,9 @@ _ROLE_PERMISSIONS: dict[str, set[str]] = {
     },
 }
 
+_APPROVAL_REQUIRED_ROLES = frozenset({"EXECUTOR", "AGENT", "OPERATOR"})
+_APPROVAL_ACTIONS = frozenset({"APPROVE_STAGE_05B", "RUN_REA_EXECUTION"})
+
 
 @dataclass(frozen=True)
 class RbacDecision:
@@ -53,16 +60,44 @@ class RbacDecision:
 
 def evaluate_rbac(
     *,
-    actor_id: str,
-    role: str,
-    action: str,
-    approver_id: str | None = None,
-    self_certified: bool = False,
+    actor_id: object,
+    role: object,
+    action: object,
+    approver_id: object = None,
+    self_certified: object = False,
+    approver_context: object = None,
 ) -> RbacDecision:
-    """Evaluate strict RBAC permissions and block self-approval/self-certification."""
-    clean_actor = (actor_id or "").strip()
-    clean_role = (role or "").strip().upper()
-    clean_action = (action or "").strip().upper()
+    actor_out = actor_id if isinstance(actor_id, str) else ""
+    role_out = role if isinstance(role, str) else ""
+    action_out = action if isinstance(action, str) else ""
+    approver_out = approver_id if isinstance(approver_id, str) else None
+
+    if (
+        not isinstance(actor_id, str)
+        or not isinstance(role, str)
+        or not isinstance(action, str)
+        or (approver_id is not None and not isinstance(approver_id, str))
+        or not isinstance(self_certified, bool)
+        or (approver_context is not None and not isinstance(approver_context, Mapping))
+    ):
+        return RbacDecision(
+            allowed=False,
+            actor_id=actor_out,
+            role=role_out,
+            action=action_out,
+            reason="Invalid RBAC input types",
+        )
+
+    assert isinstance(actor_id, str)
+    assert isinstance(role, str)
+    assert isinstance(action, str)
+    assert approver_id is None or isinstance(approver_id, str)
+    assert isinstance(self_certified, bool)
+    assert approver_context is None or isinstance(approver_context, Mapping)
+
+    clean_actor = actor_id.strip()
+    clean_role = role.strip().upper()
+    clean_action = action.strip().upper()
 
     if not clean_actor:
         return RbacDecision(
@@ -91,6 +126,20 @@ def evaluate_rbac(
             reason="Only HUMAN_APPROVER may approve Stage 05b",
         )
 
+    if clean_role == "HUMAN_APPROVER" and clean_action in _APPROVAL_ACTIONS:
+        context = dict(approver_context or {})
+        raw_now = context.get("now")
+        now = raw_now if isinstance(raw_now, datetime) else None
+        approver_error = validate_trusted_approver(clean_actor, clean_action, context, now)
+        if approver_error is not None:
+            return RbacDecision(
+                allowed=False,
+                actor_id=clean_actor,
+                role=clean_role,
+                action=clean_action,
+                reason=approver_error,
+            )
+
     if clean_role in {"EXECUTOR", "AGENT"} and self_certified:
         return RbacDecision(
             allowed=False,
@@ -100,25 +149,25 @@ def evaluate_rbac(
             reason=f"Role {clean_role} cannot self-certify execution",
         )
 
+    clean_approver = approver_out.strip() if approver_out is not None else ""
     if (
-        clean_action in {"APPROVE_STAGE_05B", "RUN_REA_EXECUTION"}
-        and approver_id is not None
-        and approver_id.strip()
-        and approver_id.strip() == clean_actor
-        and clean_role in {"EXECUTOR", "AGENT"}
+        clean_action in _APPROVAL_ACTIONS
+        and clean_approver
+        and clean_approver == clean_actor
+        and clean_role in _APPROVAL_REQUIRED_ROLES
     ):
         return RbacDecision(
             allowed=False,
             actor_id=clean_actor,
             role=clean_role,
             action=clean_action,
-            reason="Self-authorization by executor/agent is prohibited",
+            reason="Self-authorization by executor/agent/operator is prohibited",
         )
 
     if (
-        clean_action in {"APPROVE_STAGE_05B", "RUN_REA_EXECUTION"}
-        and clean_role in {"EXECUTOR", "AGENT"}
-        and not (approver_id or "").strip()
+        clean_action in _APPROVAL_ACTIONS
+        and clean_role in _APPROVAL_REQUIRED_ROLES
+        and not clean_approver
     ):
         return RbacDecision(
             allowed=False,
@@ -126,10 +175,24 @@ def evaluate_rbac(
             role=clean_role,
             action=clean_action,
             reason=(
-                "Independent approver_id required: EXECUTOR/AGENT cannot run or "
-                "certify Stage 05b without an identified approver"
+                "Independent trusted approver required: this role cannot run or "
+                "certify Stage 05b without an approved identity"
             ),
         )
+
+    if clean_action in _APPROVAL_ACTIONS and clean_approver:
+        context = dict(approver_context or {})
+        raw_now = context.get("now")
+        now = raw_now if isinstance(raw_now, datetime) else None
+        error = validate_trusted_approver(clean_approver, clean_action, context, now)
+        if error is not None:
+            return RbacDecision(
+                allowed=False,
+                actor_id=clean_actor,
+                role=clean_role,
+                action=clean_action,
+                reason=error,
+            )
 
     allowed_actions = _ROLE_PERMISSIONS[clean_role]
     if clean_action not in allowed_actions:

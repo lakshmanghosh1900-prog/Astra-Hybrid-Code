@@ -5,7 +5,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
-import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -29,9 +29,10 @@ from astra_coder.license import (
     verify_sha256_digest,
 )
 
+from .clock import resolve_clock
 from .rbac import evaluate_rbac
-
-_SHA256_RE = re.compile(r"[0-9a-f]{64}")
+from .trust import TrustedKey, key_is_active, load_trusted_keys
+from .validation import parse_aware_utc, strict_sha256
 
 
 @dataclass(frozen=True)
@@ -48,14 +49,14 @@ def _sha256_file(path: Path) -> str:
 
 
 def _strict_sha256(value: Any) -> str | None:
-    """Return value only if it is exactly 64 lowercase hex characters (no normalization)."""
-    if isinstance(value, str) and _SHA256_RE.fullmatch(value):
-        return value
-    return None
+    return strict_sha256(value)
+
+
+def _parse_utc(value: Any) -> datetime | None:
+    return parse_aware_utc(value)
 
 
 def _load_json_object(path: Path, label: str) -> tuple[dict[str, Any] | None, str | None]:
-    """Load a JSON object; returns (object, None) or (None, category error reason)."""
     try:
         raw = path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as exc:
@@ -69,39 +70,7 @@ def _load_json_object(path: Path, label: str) -> tuple[dict[str, Any] | None, st
     return data, None
 
 
-def _parse_utc(ts: Any) -> datetime | None:
-    """Strictly parse a timestamp: string, timezone-aware, valid calendar value.
-
-    Returns None for missing, non-string, malformed, empty, or timezone-naive input.
-    Naive timestamps are ambiguous and are never coerced to UTC.
-    A trailing Z is accepted as an explicit UTC offset.
-    """
-    if not isinstance(ts, str):
-        return None
-    normalized = ts.strip()
-    if not normalized:
-        return None
-    if normalized.endswith("Z"):
-        normalized = normalized[:-1] + "+00:00"
-    try:
-        dt = datetime.fromisoformat(normalized)
-    except ValueError:
-        return None
-    if dt.tzinfo is None or dt.utcoffset() is None:
-        return None
-    return dt.astimezone(UTC)
-
-
 def _resolve_expiry(auth_data: dict[str, Any]) -> tuple[datetime | None, str | None]:
-    """Resolve the R1 expiry instant.
-
-    Canonical location: authorization.expires_at_utc, as required by
-    docs/schemas/authorization.schema.json. A root-level expires_at_utc is not
-    part of the schema; it is never used as a source of truth. If both locations
-    are present they must both parse strictly and denote the same instant,
-    otherwise the artifact is denied as conflicting. Exactly one of
-    (expiry, error) is non-None.
-    """
     nested_block = auth_data.get("authorization")
     nested_present = "expires_at_utc" in (nested_block if isinstance(nested_block, dict) else {})
     if "authorization" in auth_data and not isinstance(nested_block, dict):
@@ -109,9 +78,10 @@ def _resolve_expiry(auth_data: dict[str, Any]) -> tuple[datetime | None, str | N
     if not nested_present:
         return None, "missing required expiry (authorization.expires_at_utc)"
 
-    nested_expiry = _parse_utc(
+    nested_expiry_raw = (
         nested_block.get("expires_at_utc") if isinstance(nested_block, dict) else None
     )
+    nested_expiry = _parse_utc(nested_expiry_raw)
     if nested_expiry is None:
         return None, (
             "malformed, non-string, or timezone-naive expiry (authorization.expires_at_utc)"
@@ -137,29 +107,30 @@ def _decode_pem_or_raw_public_key(raw: bytes) -> bytes:
         )
     if len(raw) == 32:
         return raw
-    return base64.b64decode(text)
+    return base64.b64decode(text, validate=True)
 
 
 def _verify_r1_signature(
-    auth_data: dict[str, Any], public_key_pem: bytes | None
+    auth_data: dict[str, Any],
+    trusted_keys: Mapping[str, TrustedKey],
+    now: datetime,
 ) -> tuple[bool, str]:
-    """Verify the top-level Ed25519 signature block, failing closed on every path.
-
-    Expected block: auth_data["signature"] with base64 value under
-    "signature_base64" or "value", over the canonical JSON of all other fields.
-    binascii.Error (malformed base64/padding) subclasses ValueError and is
-    therefore handled by the ValueError branch.
-    """
     sig_block = auth_data.get("signature")
     if not isinstance(sig_block, dict):
         return False, "Missing R1 signature block"
     sig_b64 = sig_block.get("signature_base64") or sig_block.get("value")
     if not isinstance(sig_b64, str) or not sig_b64.strip():
         return False, "Missing R1 Ed25519 signature value"
+    key_id = sig_block.get("key_id")
+    if not isinstance(key_id, str) or not key_id.strip():
+        return False, "Missing R1 key_id"
+    trusted_key = trusted_keys.get(key_id)
+    if trusted_key is None:
+        return False, f"Unknown R1 key_id: {key_id}"
+    if not key_is_active(trusted_key, now):
+        return False, f"R1 key is not active for key_id: {key_id}"
     if not _HAS_CRYPTOGRAPHY or Ed25519PublicKey is None:
         return False, "cryptography dependency unavailable for R1 signature verification"
-    if public_key_pem is None:
-        return False, "Missing Ed25519 public key for R1 verification"
 
     payload_copy = {k: v for k, v in auth_data.items() if k != "signature"}
     canonical_bytes = json.dumps(payload_copy, sort_keys=True, separators=(",", ":")).encode(
@@ -167,7 +138,9 @@ def _verify_r1_signature(
     )
 
     try:
-        pub_key = Ed25519PublicKey.from_public_bytes(_decode_pem_or_raw_public_key(public_key_pem))
+        pub_key = Ed25519PublicKey.from_public_bytes(
+            _decode_pem_or_raw_public_key(trusted_key.public_key)
+        )
         sig_bytes = base64.b64decode(sig_b64, validate=True)
         pub_key.verify(sig_bytes, canonical_bytes)
     except InvalidSignature:
@@ -182,15 +155,25 @@ def _verify_r1_signature(
     return True, "R1 Ed25519 signature verified"
 
 
-def _resolve_contained_file(root: Path, raw: Any, label: str) -> tuple[Path | None, str | None]:
-    """Resolve a repository-relative path and enforce containment within root.
+def _validate_authorization_state(auth_data: dict[str, Any]) -> str | None:
+    artifact_status = auth_data.get("artifact_status")
+    if artifact_status != "APPROVED":
+        return f"R1 artifact_status must be APPROVED (got {type(artifact_status).__name__})"
 
-    The resolved (symlink-following) path must stay inside root; parent
-    traversal, absolute external paths, and symlinks escaping the repository are
-    rejected. Returns (path, None) on success or (None, deny reason).
-    This check is not race-free: a swap between resolution and the later read
-    is not detected.
-    """
+    auth_block = auth_data.get("authorization")
+    if not isinstance(auth_block, dict):
+        return "R1 authorization block must be a JSON object"
+    decision = auth_block.get("approval_decision")
+    if decision != "APPROVED":
+        return f"R1 approval_decision must be APPROVED (got {type(decision).__name__})"
+
+    proof = auth_data.get("cryptographic_proof")
+    if isinstance(proof, dict) and proof.get("signature_verified") is False:
+        return "R1 self-asserted signature_verified is false"
+    return None
+
+
+def _resolve_contained_file(root: Path, raw: Any, label: str) -> tuple[Path | None, str | None]:
     if not isinstance(raw, str) or not raw.strip():
         return None, f"{label} path must be a non-empty string"
     try:
@@ -208,31 +191,101 @@ def _resolve_contained_file(root: Path, raw: Any, label: str) -> tuple[Path | No
 
 def enforce_rea_gate(
     *,
-    repo_root: Path | str,
-    actor_id: str,
-    role: str,
-    action: str = "RUN_REA_EXECUTION",
-    public_key_pem: bytes | None = None,
-    now_utc: datetime | None = None,
-    approver_id: str | None = None,
-    self_certified: bool = False,
+    repo_root: object,
+    actor_id: object,
+    role: object,
+    action: object = "RUN_REA_EXECUTION",
+    public_key_pem: object = None,
+    now_utc: object = None,
+    approver_id: object = None,
+    self_certified: object = False,
 ) -> ReaGateResult:
-    """Enforce R1 authorization, R2 license gate, R3 input manifest, and RBAC.
-
-    Expiry boundary: an authorization is expired iff now > expires_at_utc; the
-    expiry instant itself is still valid. approver_id and self_certified are
-    propagated to evaluate_rbac; EXECUTOR/AGENT execution or approval without an
-    identified independent approver is denied (no permissive default bypass).
-    """
-    root = Path(repo_root).resolve()
-    now = (now_utc or datetime.now(UTC)).astimezone(UTC)
     checks: dict[str, bool] = {
         "rbac_ok": False,
         "r1_present_and_valid": False,
         "r2_license_approved": False,
         "r3_manifest_and_hashes_ok": False,
     }
+
+    def deny(reasons: list[str], at: datetime | None = None) -> ReaGateResult:
+        moment = at if at is not None else datetime.now(UTC)
+        return ReaGateResult(
+            allowed=False,
+            stage="05b",
+            checks=checks,
+            blocking_reasons=reasons,
+            evaluated_at_utc=moment.isoformat(),
+        )
+
+    type_errors: list[str] = []
+    if not isinstance(repo_root, str | Path):
+        type_errors.append("repo_root must be a path")
+    if not isinstance(actor_id, str):
+        type_errors.append("actor_id must be a string")
+    if not isinstance(role, str):
+        type_errors.append("role must be a string")
+    if not isinstance(action, str):
+        type_errors.append("action must be a string")
+    if public_key_pem is not None and not isinstance(public_key_pem, bytes | bytearray):
+        type_errors.append("public_key_pem must be bytes or None")
+    if now_utc is not None and not isinstance(now_utc, datetime):
+        type_errors.append("now_utc must be a datetime or None")
+    if approver_id is not None and not isinstance(approver_id, str):
+        type_errors.append("approver_id must be a string or None")
+    if not isinstance(self_certified, bool):
+        type_errors.append("self_certified must be a boolean")
+    if type_errors:
+        return deny([f"Invalid gate input types: {', '.join(type_errors)}"])
+
+    assert isinstance(repo_root, str | Path)
+    assert isinstance(actor_id, str)
+    assert isinstance(role, str)
+    assert isinstance(action, str)
+    assert public_key_pem is None or isinstance(public_key_pem, bytes | bytearray)
+    assert now_utc is None or isinstance(now_utc, datetime)
+    assert approver_id is None or isinstance(approver_id, str)
+    assert isinstance(self_certified, bool)
+
+    now, clock_error = resolve_clock(now_utc)
+    if clock_error is not None or now is None:
+        return deny([f"R1 clock policy failed: {clock_error or 'unknown clock error'}"])
+
+    root = Path(repo_root).resolve()
     reasons: list[str] = []
+
+    auth_path = root / "authorization.json"
+    lic_path = root / "license-check.json"
+    man_path = root / "rea-input-manifest.json"
+
+    for label, path in [
+        ("R1 authorization.json", auth_path),
+        ("R2 license-check.json", lic_path),
+        ("R3 rea-input-manifest.json", man_path),
+    ]:
+        if not path.exists() or not path.is_file():
+            reasons.append(f"Missing required gate artifact: {label}")
+    if reasons:
+        return deny(reasons, now)
+
+    auth_data, auth_err = _load_json_object(auth_path, "R1 authorization.json")
+    lic_data, lic_err = _load_json_object(lic_path, "R2 license-check.json")
+    man_data, man_err = _load_json_object(man_path, "R3 rea-input-manifest.json")
+    load_errors = [error for error in (auth_err, lic_err, man_err) if error is not None]
+    if load_errors:
+        reasons.extend(load_errors)
+        return deny(reasons, now)
+    assert auth_data is not None and lic_data is not None and man_data is not None
+
+    auth_sha = _sha256_file(auth_path)
+    auth_block = auth_data.get("authorization")
+    auth_id = auth_block.get("authorization_id") if isinstance(auth_block, dict) else None
+    if not isinstance(auth_id, str):
+        auth_id = None
+    approver_context: dict[str, Any] = {
+        "authorization_id": auth_id,
+        "artifact_sha256": auth_sha,
+        "now": now,
+    }
 
     rbac = evaluate_rbac(
         actor_id=actor_id,
@@ -240,49 +293,15 @@ def enforce_rea_gate(
         action=action,
         approver_id=approver_id,
         self_certified=self_certified,
+        approver_context=approver_context,
     )
     checks["rbac_ok"] = rbac.allowed
     if not rbac.allowed:
         reasons.append(f"RBAC denied: {rbac.reason}")
 
-    auth_path = root / "authorization.json"
-    lic_path = root / "license-check.json"
-    man_path = root / "rea-input-manifest.json"
-
-    for label, p in [
-        ("R1 authorization.json", auth_path),
-        ("R2 license-check.json", lic_path),
-        ("R3 rea-input-manifest.json", man_path),
-    ]:
-        if not p.exists() or not p.is_file():
-            reasons.append(f"Missing required gate artifact: {label}")
-
-    if reasons:
-        return ReaGateResult(
-            allowed=False,
-            stage="05b",
-            checks=checks,
-            blocking_reasons=reasons,
-            evaluated_at_utc=now.isoformat(),
-        )
-
-    auth_data, auth_err = _load_json_object(auth_path, "R1 authorization.json")
-    lic_data, lic_err = _load_json_object(lic_path, "R2 license-check.json")
-    man_data, man_err = _load_json_object(man_path, "R3 rea-input-manifest.json")
-    load_errors = [e for e in (auth_err, lic_err, man_err) if e is not None]
-    if load_errors:
-        reasons.extend(load_errors)
-        return ReaGateResult(
-            allowed=False,
-            stage="05b",
-            checks=checks,
-            blocking_reasons=reasons,
-            evaluated_at_utc=now.isoformat(),
-        )
-    assert auth_data is not None and lic_data is not None and man_data is not None
-
     expiry_dt, expiry_err = _resolve_expiry(auth_data)
-    sig_ok, sig_msg = _verify_r1_signature(auth_data, public_key_pem)
+    sig_ok, sig_msg = _verify_r1_signature(auth_data, load_trusted_keys(), now)
+    state_err = _validate_authorization_state(auth_data)
     expired = expiry_dt is not None and now > expiry_dt
     if expiry_err is not None:
         reasons.append(f"R1 {expiry_err}")
@@ -290,8 +309,11 @@ def enforce_rea_gate(
         reasons.append("R1 authorization has expired")
     if not sig_ok:
         reasons.append(sig_msg)
-    r1_ok = expiry_err is None and not expired and sig_ok
-    checks["r1_present_and_valid"] = r1_ok
+    if state_err is not None:
+        reasons.append(state_err)
+    checks["r1_present_and_valid"] = (
+        expiry_err is None and not expired and sig_ok and state_err is None
+    )
 
     result_obj = lic_data.get("result")
     lic_status: Any = None
@@ -327,7 +349,6 @@ def enforce_rea_gate(
         )
     checks["r2_license_approved"] = r2_ok
 
-    auth_sha = _sha256_file(auth_path)
     lic_sha = _sha256_file(lic_path)
     auth_ref_blk = man_data.get("authorization_reference")
     lic_ref_blk = man_data.get("license_reference")
@@ -354,7 +375,7 @@ def enforce_rea_gate(
         all_inputs_ok = False
     else:
         inputs_list = inputs_raw
-        all_inputs_ok = len(inputs_list) > 0
+        all_inputs_ok = bool(inputs_list)
         if not inputs_list:
             reasons.append("R3 manifest inputs list is empty")
 
@@ -384,12 +405,10 @@ def enforce_rea_gate(
             all_inputs_ok = False
             reasons.append(f"R3 SHA-256 mismatch for {rel}")
 
-    r3_ok = all_inputs_ok and ref_match_ok
-    checks["r3_manifest_and_hashes_ok"] = r3_ok
+    checks["r3_manifest_and_hashes_ok"] = all_inputs_ok and ref_match_ok
 
-    allowed = all(checks.values()) and len(reasons) == 0
     return ReaGateResult(
-        allowed=allowed,
+        allowed=all(checks.values()) and not reasons,
         stage="05b",
         checks=checks,
         blocking_reasons=reasons,

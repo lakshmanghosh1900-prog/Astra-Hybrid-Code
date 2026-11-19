@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.0",
   "artifact_type": "ASTRA_CODER_AUTHORIZATION_AUDIT_LOG",
   "repository": "lakshmanghosh1900-prog/Astra-Hybrid-Code",
   "events": [
@@ -14,7 +14,10 @@
       "decision": "PENDING",
       "evidence_reference": null,
       "previous_event_hash": null,
-      "event_sha256": null
+      "event_sha256": null,
+      "sequence": 1,
+      "idempotency_key": "REPLACE_WITH_IDEMPOTENCY_KEY",
+      "operation_id": "REPLACE_WITH_OPERATION_ID"
     }
   ],
   "integrity": {

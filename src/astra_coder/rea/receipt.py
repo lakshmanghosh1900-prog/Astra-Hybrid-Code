@@ -6,10 +6,13 @@ import hashlib
 import json
 import os
 import re
+import tempfile
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
+
+from .filelock import exclusive_file_lock
 
 _EVENT_SHA_RE = re.compile(r"[0-9a-f]{64}")
 _EVENT_REQUIRED_KEYS = (
@@ -24,6 +27,9 @@ _EVENT_REQUIRED_KEYS = (
     "evidence_reference",
     "previous_event_hash",
     "event_sha256",
+    "sequence",
+    "idempotency_key",
+    "operation_id",
 )
 _ACTOR_TYPES = frozenset({"HUMAN_OPERATOR", "SYSTEM_VERIFIER"})
 _DECISIONS = frozenset({"PENDING", "APPROVED", "REJECTED", "REVOKED"})
@@ -104,26 +110,20 @@ def build_execution_receipt(
 
 
 def _canonical_event_hash(event: Mapping[str, Any]) -> str:
-    """SHA-256 over the event with event_sha256 excluded, deterministic JSON."""
     payload = {k: v for k, v in event.items() if k != "event_sha256"}
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(canonical).hexdigest()
 
 
 def verify_event_chain(events: Any) -> list[dict[str, Any]]:
-    """Validate audit-log event structure and the full hash chain.
-
-    Rejects non-list events, malformed entries, duplicate event ids, broken
-    previous_event_hash links, and stored event_sha256 values that do not match
-    the recomputed canonical hash. The first event must have a null
-    previous_event_hash (genesis rule used by this writer). Raises ValueError
-    on any defect; returns the verified event list otherwise.
-    """
     if not isinstance(events, list):
         raise ValueError("audit log events must be a list")
     verified: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
+    seen_idempotency_keys: set[str] = set()
     prev_hash: str | None = None
+    expected_sequence = 1
+
     for index, event in enumerate(events):
         if not isinstance(event, dict):
             raise ValueError(f"audit log event at index {index} is not an object")
@@ -138,6 +138,27 @@ def verify_event_chain(events: Any) -> list[dict[str, Any]]:
         if event_id in seen_ids:
             raise ValueError(f"audit log contains duplicate event_id: {event_id}")
         seen_ids.add(event_id)
+
+        sequence = event["sequence"]
+        if (
+            not isinstance(sequence, int)
+            or isinstance(sequence, bool)
+            or sequence != expected_sequence
+        ):
+            raise ValueError(f"audit log event at index {index} has invalid sequence")
+        expected_sequence += 1
+
+        idempotency_key = event["idempotency_key"]
+        if not isinstance(idempotency_key, str) or not idempotency_key:
+            raise ValueError(f"audit log event at index {index} has invalid idempotency_key")
+        if idempotency_key in seen_idempotency_keys:
+            raise ValueError(f"audit log contains duplicate idempotency_key: {idempotency_key}")
+        seen_idempotency_keys.add(idempotency_key)
+
+        operation_id = event["operation_id"]
+        if not isinstance(operation_id, str) or not operation_id:
+            raise ValueError(f"audit log event at index {index} has invalid operation_id")
+
         if event["stage"] != "05b":
             raise ValueError(f"audit log event at index {index} has invalid stage")
         if event["actor_type"] not in _ACTOR_TYPES:
@@ -167,16 +188,12 @@ def verify_event_chain(events: Any) -> list[dict[str, Any]]:
 
 
 def _atomic_write_json(target: Path, doc: dict[str, Any]) -> None:
-    """Write the full JSON document via temp file + os.replace (atomic replace).
-
-    This is not byte-level append-only: the document is re-serialized whole.
-    Prior event objects and their verified hashes are preserved unchanged, and
-    the replace is atomic on the same filesystem.
-    """
+    target.parent.mkdir(parents=True, exist_ok=True)
     payload = json.dumps(doc, indent=2) + "\n"
-    tmp = target.with_name(target.name + ".tmp")
+    fd, tmp_name = tempfile.mkstemp(prefix=f".{target.name}.", suffix=".tmp", dir=target.parent)
+    tmp = Path(tmp_name)
     try:
-        with open(tmp, "w", encoding="utf-8") as fh:
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
             fh.write(payload)
             fh.flush()
             os.fsync(fh.fileno())
@@ -187,6 +204,20 @@ def _atomic_write_json(target: Path, doc: dict[str, Any]) -> None:
                 tmp.unlink()
             except OSError:
                 pass
+
+
+def _replay_matches(existing: Mapping[str, Any], requested: Mapping[str, Any]) -> bool:
+    fields = (
+        "event_type",
+        "stage",
+        "actor_type",
+        "actor_identity",
+        "authorization_id",
+        "decision",
+        "evidence_reference",
+        "operation_id",
+    )
+    return all(existing.get(field) == requested.get(field) for field in fields)
 
 
 def append_audit_event(
@@ -201,73 +232,104 @@ def append_audit_event(
     evidence_reference: str | None,
     timestamp_utc: str | None = None,
     repository: str = "lakshmanghosh1900-prog/Astra-Hybrid-Code",
+    sequence: int | None = None,
+    idempotency_key: str | None = None,
+    operation_id: str | None = None,
+    lock_timeout: float = 5.0,
 ) -> dict[str, Any]:
-    """Append a SHA-256 hash-chained event matching authorization-log.schema.json.
-
-    The entire existing chain is re-verified (structure, links, recomputed
-    hashes) before anything is written; a failed verification raises ValueError
-    and leaves the file untouched. integrity.verified is set to true only after
-    the complete chain, including the new event, has been verified.
-    """
     target = Path(log_path)
     target.parent.mkdir(parents=True, exist_ok=True)
 
-    if target.exists():
-        try:
-            raw = target.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError) as exc:
-            raise ValueError(f"audit log could not be read ({type(exc).__name__})") from exc
-        try:
-            doc = json.loads(raw)
-        except json.JSONDecodeError as exc:
-            raise ValueError("audit log is not valid JSON") from exc
-        if not isinstance(doc, dict):
-            raise ValueError("audit log root must be a JSON object")
-        if "events" not in doc:
-            raise ValueError("audit log is missing the events field")
-        verified_events = verify_event_chain(doc.get("events"))
-    else:
-        doc = {
-            "schema_version": "1.0.0",
-            "artifact_type": "ASTRA_CODER_AUTHORIZATION_AUDIT_LOG",
-            "repository": repository,
-            "events": [],
-            "integrity": {
-                "append_only": True,
-                "tamper_evident": True,
-                "hash_algorithm": "SHA-256",
-                "verified": True,
-            },
+    if sequence is not None and (
+        not isinstance(sequence, int) or isinstance(sequence, bool) or sequence < 1
+    ):
+        raise ValueError("sequence must be a positive integer or None")
+    if idempotency_key is not None and (
+        not isinstance(idempotency_key, str) or not idempotency_key
+    ):
+        raise ValueError("idempotency_key must be a non-empty string or None")
+    if operation_id is not None and (not isinstance(operation_id, str) or not operation_id):
+        raise ValueError("operation_id must be a non-empty string or None")
+
+    lock_path = target.with_name(target.name + ".lock")
+    with exclusive_file_lock(lock_path, timeout=lock_timeout):
+        if target.exists():
+            try:
+                raw = target.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError) as exc:
+                raise ValueError(f"audit log could not be read ({type(exc).__name__})") from exc
+            try:
+                doc = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                raise ValueError("audit log is not valid JSON") from exc
+            if not isinstance(doc, dict):
+                raise ValueError("audit log root must be a JSON object")
+            if "events" not in doc:
+                raise ValueError("audit log is missing the events field")
+            verified_events = verify_event_chain(doc.get("events"))
+        else:
+            doc = {
+                "schema_version": "1.1.0",
+                "artifact_type": "ASTRA_CODER_AUTHORIZATION_AUDIT_LOG",
+                "repository": repository,
+                "events": [],
+                "integrity": {
+                    "append_only": True,
+                    "tamper_evident": True,
+                    "hash_algorithm": "SHA-256",
+                    "verified": True,
+                },
+            }
+            verified_events = []
+
+        effective_idempotency_key = idempotency_key or event_id
+        effective_operation_id = operation_id or event_id
+        request_shape = {
+            "event_type": event_type,
+            "stage": "05b",
+            "actor_type": actor_type,
+            "actor_identity": actor_identity,
+            "authorization_id": authorization_id,
+            "decision": decision,
+            "evidence_reference": evidence_reference,
+            "operation_id": effective_operation_id,
         }
-        verified_events = []
 
-    prev_hash = verified_events[-1]["event_sha256"] if verified_events else None
-    ts = timestamp_utc or datetime.now(UTC).isoformat()
+        for existing in verified_events:
+            if existing["idempotency_key"] == effective_idempotency_key:
+                if not _replay_matches(existing, request_shape):
+                    raise ValueError(
+                        "idempotency_key reused with a different operation: "
+                        f"{effective_idempotency_key}"
+                    )
+                return dict(existing)
 
-    event_payload = {
-        "event_id": event_id,
-        "event_type": event_type,
-        "stage": "05b",
-        "actor_type": actor_type,
-        "actor_identity": actor_identity,
-        "authorization_id": authorization_id,
-        "timestamp_utc": ts,
-        "decision": decision,
-        "evidence_reference": evidence_reference,
-        "previous_event_hash": prev_hash,
-    }
-    full_event = {**event_payload, "event_sha256": _canonical_event_hash(event_payload)}
+        expected_sequence = len(verified_events) + 1
+        effective_sequence = sequence if sequence is not None else expected_sequence
+        if effective_sequence != expected_sequence:
+            raise ValueError(f"sequence must be {expected_sequence}")
 
-    candidate_events = [*verified_events, full_event]
-    verify_event_chain(candidate_events)
+        prev_hash = verified_events[-1]["event_sha256"] if verified_events else None
+        ts = timestamp_utc or datetime.now(UTC).isoformat()
+        event_payload = {
+            **request_shape,
+            "event_id": event_id,
+            "timestamp_utc": ts,
+            "previous_event_hash": prev_hash,
+            "sequence": effective_sequence,
+            "idempotency_key": effective_idempotency_key,
+        }
+        full_event = {**event_payload, "event_sha256": _canonical_event_hash(event_payload)}
+        candidate_events = [*verified_events, full_event]
+        verify_event_chain(candidate_events)
 
-    doc["events"] = candidate_events
-    doc["integrity"] = {
-        "append_only": True,
-        "tamper_evident": True,
-        "hash_algorithm": "SHA-256",
-        "verified": True,
-    }
+        doc["events"] = candidate_events
+        doc["integrity"] = {
+            "append_only": True,
+            "tamper_evident": True,
+            "hash_algorithm": "SHA-256",
+            "verified": True,
+        }
 
-    _atomic_write_json(target, doc)
-    return full_event
+        _atomic_write_json(target, doc)
+        return full_event
