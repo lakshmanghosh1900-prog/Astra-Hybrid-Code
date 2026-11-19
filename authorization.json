@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_type": "ASTRA_CODER_STAGE_AUTHORIZATION",
+  "artifact_status": "APPROVED",
+  "authorization": {
+    "authorization_id": "auth-05b-20261119-01",
+    "repository": "lakshmanghosh1900-prog/Astra-Hybrid-Code",
+    "target_branch": "main",
+    "stage": "05b",
+    "scope": "REA_IMPLEMENTATION",
+    "issued_at_utc": "2026-11-19T13:06:00Z",
+    "expires_at_utc": "2026-12-19T13:06:00Z",
+    "human_approver": {
+      "name": "Lakshman Ghosh",
+      "identity": "lakshman.ghosh1900@gmail.com",
+      "role": "operator",
+      "verification_method": "local-ed25519-key"
+    },
+    "approved_actions": [
+      "STAGE_05B_REA"
+    ],
+    "prohibited_actions": [
+      "UNAPPROVED_PUSH",
+      "UNAPPROVED_DEPLOY"
+    ],
+    "approval_decision": "APPROVED",
+    "approval_evidence_reference": "local-operator-disposition-2026-11-19"
+  },
+  "cryptographic_proof": {
+    "algorithm": "Ed25519",
+    "key_id": "2c6d9232245a06ed",
+    "signed_payload_sha256": "5ee11765e0f0999ec2046312508dd60697e3d1479ff9cb3db763a033e956b9d0",
+    "signature": "fef01cf5990739647961758f9df28bf2b071f5f1f5177fe0db70dc0c05377052aefa94804dac58cdd3095aaf1910b4295d0f94da0d6d141a29cff37a0df43d02",
+    "signature_verified": true
+  },
+  "governance": {
+    "executor_can_authorize_self": false,
+    "human_approval_required": true,
+    "fail_closed": true,
+    "revocable": true
+  },
+  "validation": {
+    "status": "VALID",
+    "validated_by": "Lakshman Ghosh",
+    "validated_at_utc": "2026-11-19T13:06:00Z"
+  }
+}
