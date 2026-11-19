@@ -34,3 +34,13 @@ __pycache__/
 .ruff_cache/
 .security-venv-win/
 /omnirush
+
+# Audit/scan artifacts (never commit)
+audit-upload/
+gitleaks-artifact/
+coverage.json
+coverage.xml
+gitleaks-findings.json
+.coverage
+coverage.log
+.astra-keys/

@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_type": "ASTRA_CODER_LICENSE_COMPLIANCE",
+  "artifact_status": "VALIDATED",
+  "repository": "lakshmanghosh1900-prog/Astra-Hybrid-Code",
+  "target_branch": "main",
+  "stage": "05b",
+  "validation_scope": {
+    "production_dependencies": true,
+    "development_dependencies": false,
+    "transitive_dependencies": true,
+    "containers": false,
+    "models_and_datasets": true,
+    "external_services": false
+  },
+  "evidence": {
+    "sbom_path": "reports/sbom-requirements.txt",
+    "sbom_sha256": "90bdb412b86bcc6790b5c9e4107634c96be133f65a0070ce52e483f603d4f614",
+    "dependency_lockfiles": [
+      "requirements.lock",
+      "security-requirements.lock",
+      "dashboard/package-lock.json"
+    ],
+    "scanner_name": "pip-freeze",
+    "scanner_version": "26.2.2",
+    "scan_run_id": "local-20261119-01",
+    "scan_timestamp_utc": "2026-11-19T13:06:00Z"
+  },
+  "license_inventory": [
+    {
+      "component": "cryptography",
+      "version": "50.0.2",
+      "license": "Apache-2.0 OR BSD-3-Clause",
+      "provenance": "pypi:cryptography==50.0.2"
+    },
+    {
+      "component": "jsonschema",
+      "version": "4.26.0",
+      "license": "MIT",
+      "provenance": "pypi:jsonschema==4.26.0"
+    }
+  ],
+  "policy": {
+    "allowlist": [
+      "MIT",
+      "Apache-2.0",
+      "BSD-3-Clause"
+    ],
+    "denylist": [
+      "GPL-3.0",
+      "AGPL-3.0"
+    ],
+    "unknown_license_policy": "BLOCK",
+    "copyleft_review_required": true,
+    "commercial_use_review_required": true,
+    "model_license_review_required": true
+  },
+  "compliance_review": {
+    "reviewer": "Lakshman Ghosh",
+    "reviewer_identity": "lakshman.ghosh1900@gmail.com",
+    "review_timestamp_utc": "2026-11-19T13:06:00Z",
+    "findings": [],
+    "exceptions": [],
+    "exception_approval_reference": null
+  },
+  "result": {
+    "status": "PASS",
+    "blocking_findings": [],
+    "approved_for_stage_05b": true
+  },
+  "governance": {
+    "missing_evidence_fails_closed": true,
+    "unknown_license_fails_closed": true,
+    "self_certification_by_executor": false
+  }
+}

@@ -1,0 +1,242 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://astramind.local/schemas/execution-receipt.schema.json",
+  "title": "Astra Coder Execution & Audit Receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "receipt_id",
+    "receipt_kind",
+    "recorded_at_utc",
+    "ntp_drift_seconds",
+    "monotonic_sequence",
+    "license_reference",
+    "obligations",
+    "anchor_record",
+    "signature"
+  ],
+  "properties": {
+    "receipt_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "receipt_kind": {
+      "type": "string",
+      "enum": [
+        "AUDIT_ONLY",
+        "EXECUTION"
+      ]
+    },
+    "recorded_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ntp_drift_seconds": {
+      "type": "number",
+      "minimum": -2,
+      "maximum": 2
+    },
+    "monotonic_sequence": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "license_reference": {
+      "type": "string",
+      "minLength": 1
+    },
+    "verified_byte_handle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "handle_id",
+        "immutable",
+        "retention_days",
+        "expires_at_utc"
+      ],
+      "properties": {
+        "handle_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "immutable": {
+          "const": true
+        },
+        "retention_days": {
+          "const": 180
+        },
+        "expires_at_utc": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "obligations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reference_resolution",
+        "sha256_digest_verification",
+        "license_decision"
+      ],
+      "properties": {
+        "reference_resolution": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "resolved_target"
+          ],
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "RESOLVED",
+                "UNRESOLVED",
+                "FAILED"
+              ]
+            },
+            "resolved_target": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "sha256_digest_verification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "actual_sha256",
+            "expected_sha256"
+          ],
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "VERIFIED",
+                "MISMATCH",
+                "UNVERIFIED"
+              ]
+            },
+            "actual_sha256": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "expected_sha256": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          }
+        },
+        "license_decision": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "authority",
+            "decided_at_utc"
+          ],
+          "properties": {
+            "decision": {
+              "type": "string",
+              "enum": [
+                "ALLOW",
+                "DENY",
+                "ESCALATE"
+              ]
+            },
+            "authority": {
+              "type": "string",
+              "minLength": 1
+            },
+            "decided_at_utc": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      }
+    },
+    "anchor_record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "append_only",
+        "dual_authority_recovery",
+        "anchor_ref"
+      ],
+      "properties": {
+        "append_only": {
+          "const": true
+        },
+        "dual_authority_recovery": {
+          "const": true
+        },
+        "anchor_ref": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "signed",
+        "key_id",
+        "key_rotation_days_max",
+        "revoked"
+      ],
+      "properties": {
+        "signed": {
+          "type": "boolean"
+        },
+        "key_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "key_rotation_days_max": {
+          "const": 90
+        },
+        "revoked": {
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "receipt_kind": {
+            "const": "EXECUTION"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "signature": {
+            "properties": {
+              "signed": {
+                "const": true
+              },
+              "revoked": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_type": "ASTRA_CODER_REA_INPUT_MANIFEST",
+  "artifact_status": "COMPLETE",
+  "manifest": {
+    "manifest_id": "rea-05b-manifest-20261119-01",
+    "repository": "lakshmanghosh1900-prog/Astra-Hybrid-Code",
+    "base_commit": "d4dc3164779d38055b8da06d824d3c4d9c607a22",
+    "target_branch": "main",
+    "stage": "05b",
+    "created_at_utc": "2026-11-19T13:06:00Z",
+    "created_by": "Lakshman Ghosh <lakshman.ghosh1900@gmail.com>"
+  },
+  "authorization_reference": {
+    "artifact": "authorization.json",
+    "authorization_id": "auth-05b-20261119-01",
+    "sha256": "a383f8773deb0cb95474b50a6512cd5f1ed20631bb2ce2fab57de3661cddda0c",
+    "verification_status": "VERIFIED"
+  },
+  "license_reference": {
+    "artifact": "license-check.json",
+    "sha256": "863dc2698950a1bd4a4cbde24f29bb92253222dc863febd2bf004c284625708d",
+    "verification_status": "VERIFIED"
+  },
+  "inputs": [
+    {
+      "source_id": "lic-init",
+      "source_type": "repository_file",
+      "source_path_or_uri": "src/astra_coder/license/__init__.py",
+      "sha256": "e0de673df5bac38ab4c5e99e90dfaadb846af7d8bcceaaebb658a680ad93a161",
+      "version_or_commit": "d4dc3164779d38055b8da06d824d3c4d9c607a22",
+      "provenance": "local-repo:main@d4dc316",
+      "license_reference": "docs/design/source-policy.md",
+      "data_classification": "internal",
+      "permitted_purpose": "STAGE_05B_REA",
+      "integrity_verified": true
+    },
+    {
+      "source_id": "lic-resolve-ref",
+      "source_type": "repository_file",
+      "source_path_or_uri": "src/astra_coder/license/resolve_reference.py",
+      "sha256": "542754a228addfd40466e1d211bd28121f6f4ccf5725e245a43a696386e2fea5",
+      "version_or_commit": "d4dc3164779d38055b8da06d824d3c4d9c607a22",
+      "provenance": "local-repo:main@d4dc316",
+      "license_reference": "docs/design/source-policy.md",
+      "data_classification": "internal",
+      "permitted_purpose": "STAGE_05B_REA",
+      "integrity_verified": true
+    },
+    {
+      "source_id": "lic-verify-digest",
+      "source_type": "repository_file",
+      "source_path_or_uri": "src/astra_coder/license/verify_digest.py",
+      "sha256": "22d39a6a0b09b2aee518a52cdf128f7ddcd6ae22bdb1b764379f6e21a54c32b3",
+      "version_or_commit": "d4dc3164779d38055b8da06d824d3c4d9c607a22",
+      "provenance": "local-repo:main@d4dc316",
+      "license_reference": "docs/design/source-policy.md",
+      "data_classification": "internal",
+      "permitted_purpose": "STAGE_05B_REA",
+      "integrity_verified": true
+    },
+    {
+      "source_id": "lic-decision",
+      "source_type": "repository_file",
+      "source_path_or_uri": "src/astra_coder/license/decision.py",
+      "sha256": "1f7aeda2c73df2decf38e09f434c413fd768029048a7f6cdfb95779d731360c7",
+      "version_or_commit": "d4dc3164779d38055b8da06d824d3c4d9c607a22",
+      "provenance": "local-repo:main@d4dc316",
+      "license_reference": "docs/design/source-policy.md",
+      "data_classification": "internal",
+      "permitted_purpose": "STAGE_05B_REA",
+      "integrity_verified": true
+    }
+  ],
+  "input_record_schema": {
+    "source_id": "string",
+    "source_type": "string",
+    "source_path_or_uri": "string",
+    "sha256": "sha256-hex",
+    "version_or_commit": "git-sha-40",
+    "provenance": "string",
+    "license_reference": "string",
+    "data_classification": "string",
+    "permitted_purpose": "string",
+    "integrity_verified": true
+  },
+  "execution_constraints": {
+    "network_access": "DENY_BY_DEFAULT",
+    "filesystem_scope": "EXPLICIT_ALLOWLIST_ONLY",
+    "secret_access": "DENY",
+    "unlisted_inputs_allowed": false,
+    "input_modification_allowed": false
+  },
+  "verification": {
+    "all_inputs_hashed": true,
+    "all_sources_traced": true,
+    "all_licenses_resolved": true,
+    "authorization_verified": true,
+    "manifest_verified": true
+  },
+  "result": {
+    "status": "PASS",
+    "approved_for_rea": true,
+    "blocking_reasons": []
+  }
+}
