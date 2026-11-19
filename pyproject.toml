@@ -11,8 +11,10 @@ requires-python = ">=3.12,<3.13"
 license = { text = "MIT" }
 authors = [{ name = "Astra Coder contributors" }]
 dependencies = [
+  "cryptography==50.0.2",
   "fastapi==0.115.6",
   "httpx==0.28.1",
+  "jsonschema==4.26.0",
   "opentelemetry-api==1.29.0",
   "pydantic==2.10.6",
   "pydantic-settings==2.7.1",
