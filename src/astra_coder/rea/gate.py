@@ -1,4 +1,5 @@
 """Fail-closed REA runtime gate enforcing R1, R2, R3, and RBAC."""
+
 from __future__ import annotations
 
 import base64
@@ -16,6 +17,7 @@ from astra_coder.license import (
     resolve_license_reference,
     verify_sha256_digest,
 )
+
 from .rbac import evaluate_rbac
 
 
@@ -60,12 +62,12 @@ def _verify_r1_signature(auth_data: dict, public_key_pem: bytes | None) -> tuple
         return False, "Missing Ed25519 public key for R1 verification"
 
     payload_copy = {k: v for k, v in auth_data.items() if k != "signature"}
-    canonical_bytes = json.dumps(payload_copy, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    canonical_bytes = json.dumps(payload_copy, sort_keys=True, separators=(",", ":")).encode(
+        "utf-8"
+    )
 
     try:
-        pub_key = Ed25519PublicKey.from_public_bytes(
-            _decode_pem_or_raw_public_key(public_key_pem)
-        )
+        pub_key = Ed25519PublicKey.from_public_bytes(_decode_pem_or_raw_public_key(public_key_pem))
         sig_bytes = base64.b64decode(sig_b64, validate=True)
         pub_key.verify(sig_bytes, canonical_bytes)
         return True, "R1 Ed25519 signature verified"
@@ -117,7 +119,11 @@ def enforce_rea_gate(
     lic_path = root / "license-check.json"
     man_path = root / "rea-input-manifest.json"
 
-    for label, p in [("R1 authorization.json", auth_path), ("R2 license-check.json", lic_path), ("R3 rea-input-manifest.json", man_path)]:
+    for label, p in [
+        ("R1 authorization.json", auth_path),
+        ("R2 license-check.json", lic_path),
+        ("R3 rea-input-manifest.json", man_path),
+    ]:
         if not p.exists() or not p.is_file():
             reasons.append(f"Missing required gate artifact: {label}")
 
@@ -159,7 +165,10 @@ def enforce_rea_gate(
     r2_ok = (lic_status == "PASS") and stage_approved and (dec_obj.decision == "ALLOW")
     if not r2_ok:
         reasons.append(
-            f"R2 license gate failed: status={lic_status}, approved_for_stage_05b={stage_approved}, decision={dec_obj.decision}"
+            (
+                f"R2 license gate failed: status={lic_status}, "
+                f"approved_for_stage_05b={stage_approved}, decision={dec_obj.decision}"
+            )
         )
     checks["r2_license_approved"] = r2_ok
 
