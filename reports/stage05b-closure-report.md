@@ -76,3 +76,18 @@
 
 - Done: Audit Snapshot + G3/G5 Evidence Collection + Read-only Integration Design Review
 - NOT Done: Integration Implementation - no tests, install, schema modification, signing, REA execution, commit, push, merge, tag, deployment for next stage without explicit human implementation approval
+
+## Audit Update - 2026-11-19 - PARTIAL, NOT CERTIFIED, PR #17 HOLD
+
+- Status correction: Stage 05b is PARTIAL, NOT CERTIFIED / CLOSED
+- PR #16 is MERGED, but G3/G5 certification is NOT complete
+- G5 schema existence is proven: docs/schemas/execution-receipt.schema.json exists, tracked, 5292 bytes
+- Blockers to track separately, no implementation in this audit:
+  A. Audit log is not true append-only, existing chain not verified before append
+  B. R1 malformed expiry treated as no-expiry risk
+  C. R3 resolved path not checked to be inside repo_root, ../ traversal risk
+  D. R3 hash uses .lower() normalization, not strict lowercase hex validation
+  E. Signature except (InvalidSignature, ValueError, Exception) is redundant
+- PR #17 must NOT merge until report matches evidence and blockers are tracked
+- PR #11 remains OPEN, DO NOT MERGE
+- Next: strictly read-only Stage 05b security audit, no file modification, no REA execution
