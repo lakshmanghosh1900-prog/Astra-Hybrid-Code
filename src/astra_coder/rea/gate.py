@@ -8,6 +8,7 @@ import json
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 try:
     from cryptography.exceptions import InvalidSignature
@@ -58,7 +59,9 @@ def _parse_utc(ts: str | None) -> datetime | None:
     return dt.astimezone(UTC)
 
 
-def _verify_r1_signature(auth_data: dict, public_key_pem: bytes | None) -> tuple[bool, str]:
+def _verify_r1_signature(
+    auth_data: dict[str, Any], public_key_pem: bytes | None
+) -> tuple[bool, str]:
     sig_block = auth_data.get("signature")
     if not isinstance(sig_block, dict):
         return False, "Missing R1 signature block"

@@ -6,7 +6,7 @@ import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 
 def build_execution_receipt(
@@ -30,7 +30,7 @@ def build_execution_receipt(
     recorded_at_utc: str | None = None,
     expires_at_utc: str = "2027-05-18T00:00:00Z",
     handle_id: str = "vbh-stage05b-001",
-) -> dict:
+) -> dict[str, Any]:
     """Build a dictionary conforming to docs/schemas/execution-receipt.schema.json."""
     if receipt_kind == "EXECUTION" and (not signed or revoked):
         raise ValueError("EXECUTION receipt requires signed=True and revoked=False")
@@ -95,7 +95,7 @@ def append_audit_event(
     evidence_reference: str | None,
     timestamp_utc: str | None = None,
     repository: str = "lakshmanghosh1900-prog/Astra-Hybrid-Code",
-) -> dict:
+) -> dict[str, Any]:
     """Append a SHA-256 hash-chained event matching authorization-log.schema.json."""
     target = Path(log_path)
     target.parent.mkdir(parents=True, exist_ok=True)
