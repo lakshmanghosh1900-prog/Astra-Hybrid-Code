@@ -120,8 +120,8 @@
 ### Why still PARTIAL, NOT CERTIFIED (Section 12 rule)
 
 - Independent security review: NOT PROVEN (implementer self-review only)
-- CI evidence: NOT AVAILABLE (nothing pushed; requires human confirmation)
 - Human approval for merge/certification: PENDING
+- CI evidence: OBTAINED - PR #18, push run 44603216332 SUCCESS, pull_request run 44603313408 SUCCESS, headSha aa064b4; steps make test/lint/format/typecheck + semgrep + gitleaks all green (24/26 checkboxes proven)
 - Shipped authorization.json signature block (cryptographic_proof.signature, hex) is not gate-verifiable (no public key in repo) - gate denies fail-closed; smallest schema-compatible correction is a human-side PROPOSAL ONLY (see hardening report section 8); no signature fabricated, no artifact altered
 
 ### Scope discipline
@@ -130,8 +130,8 @@
 - No human artifact signing
 - No destructive git operations
 - PR #11 and PR #17 remain OPEN, NOT merged
-- Files changed (uncommitted): src/astra_coder/rea/{__init__,gate,rbac,receipt}.py, tests/unit/rea/test_rea_enforcement.py, reports/stage05b-security-hardening-report.md, reports/stage05b-closure-report.md
+- Committed on fix/stage05b-security-hardening: aa064b4 (7 files: src/astra_coder/rea/{__init__,gate,rbac,receipt}.py, tests/unit/rea/test_rea_enforcement.py, reports/stage05b-security-hardening-report.md, reports/stage05b-closure-report.md) + follow-up docs commit updating CI evidence
 
 ### Next action
 
-- Human operator to explicitly confirm commit + push + PR for fix/stage05b-security-hardening; then collect CI evidence, obtain independent review, and make the merge/certification decision
+- Independent second-party review of PR #18 (https://github.com/lakshmanghosh1900-prog/Astra-Hybrid-Code/pull/18), then human merge/certification decision; PR #11 and PR #17 stay open and are not part of this merge

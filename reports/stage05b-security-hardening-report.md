@@ -1,8 +1,8 @@
 # Stage 05b Security Hardening Report
 
 **Date:** 2026-11-20
-**Branch:** `fix/stage05b-security-hardening` (created from `docs/stage05b-closure-report`, HEAD `9f987ffe27a6bc48a43af75f3f3f676608373aa7`)
-**Status:** Work complete in working tree; **not yet committed** (awaiting explicit human confirmation per Section 0 authorization boundary).
+**Branch:** `fix/stage05b-security-hardening` (created from `docs/stage05b-closure-report`, baseline HEAD `9f987ffe27a6bc48a43af75f3f3f676608373aa7`)
+**Status:** Committed and pushed as `aa064b4`; **PR #18 OPEN**; CI green (runs 44603216332 / 44603313408). Certification remains **PARTIAL — NOT CERTIFIED** pending independent review and human merge approval.
 **Source findings:** `reports/stage05b-readonly-audit-findings.md` (F-R1-01/02, F-R3-01, F-LOG-01/02, F-RBAC-01, malformed-input fail-closed gap), `reports/stage05b-adversarial-test-spec-detailed.md` (15 mandatory adversarial tests).
 
 ---
@@ -41,7 +41,7 @@
 
 ---
 
-## 2. Files changed (working tree, not committed)
+## 2. Files changed (committed in `aa064b4`)
 
 | File | Change |
 |---|---|
@@ -199,13 +199,17 @@ Smallest schema-compatible correction (**PROPOSAL ONLY — human-side, requires 
 
 | Item | Status |
 |---|---|
-| Working tree | 5 intended files modified, **not committed** |
-| HEAD | `9f987ffe27a6bc48a43af75f3f3f676608373aa7` (unchanged) |
-| Final commit SHA | **PENDING** — commit/push requires explicit human confirmation (Section 0 authorization) |
-| CI run identifiers | **NONE** — nothing pushed; CI evidence available only after push |
-| PR | Not created (pending same confirmation) |
+| Working tree at report time | Clean after commit (this section updated post-CI with a follow-up docs commit) |
+| Code commit (HEAD of hardening work) | `aa064b4f652b4476a3dcda2e0ebcbe34624b3992` — `fix(rea): harden Stage 05b enforcement fail-closed and verify audit chain` |
+| Branch | `fix/stage05b-security-hardening` pushed to origin |
+| PR | **#18 OPEN** — https://github.com/lakshmanghosh1900-prog/Astra-Hybrid-Code/pull/18 (base `main`) |
+| CI push run | **44603216332 — success** (headSha `aa064b4`) |
+| CI pull_request run | **44603313408 — success** (headSha `aa064b4`) |
+| CI steps (both runs) | checkout ✓, setup-python ✓, `make test` ✓, `make lint` ✓, `make format` ✓, `make typecheck` ✓, semgrep ✓, **gitleaks ✓** |
+| PR #11 (`feat/05b-rea`) | OPEN (untouched) |
+| PR #17 (`docs/stage05b-closure-report`) | OPEN (untouched) |
 | Human approval for merge/certification | **PENDING** |
-| Independent security review | **NOT PROVEN** (self-review only) |
+| Independent security review | **NOT PROVEN** (implementer self-review only) |
 | Stage 06 / Worker / REA execution | **NONE performed** (correctly skipped) |
 | Signing human artifacts | **NONE** |
 | Destructive git operations | **NONE** |
@@ -263,10 +267,10 @@ Smallest schema-compatible correction (**PROPOSAL ONLY — human-side, requires 
 | Schema compatibility verified | PROVEN (§7) |
 | Protected SHA unchanged | PROVEN (§9) |
 | Independent security review completed | **NOT PROVEN** (self-review only) |
-| CI evidence available | **NOT PROVEN** (not pushed; requires human confirmation) |
+| CI evidence available | **PROVEN** (runs 44603216332 / 44603313408 both success, headSha `aa064b4`; all steps incl. gitleaks green) |
 | No unauthorized Stage 06/Worker/REA execution | PROVEN (none occurred) |
 | Human approval for final merge/certification | **PENDING** (not yet given) |
 
-**Result:** 23 of 26 checkboxes PROVEN; 3 unchecked (independent review, CI evidence, human approval) → per Section 12 rule, status remains **STAGE 05b — PARTIAL — NOT CERTIFIED** until those external items complete.
+**Result:** 24 of 26 checkboxes PROVEN; 2 unchecked (independent review, human approval) → per Section 12 rule, status remains **STAGE 05b — PARTIAL — NOT CERTIFIED** until those external items complete.
 
-**Next action (Section 13-G recommendation):** Human operator explicitly confirms commit + push + PR creation for `fix/stage05b-security-hardening`; then CI evidence is collected, an independent review is performed, and the human makes the merge/certification decision.
+**Next action (Section 13-G recommendation):** Obtain an independent second-party security review of PR #18, then the human operator makes the merge/certification decision (PR #11 and #17 remain open and are not part of this merge).
