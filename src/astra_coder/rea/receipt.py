@@ -31,6 +31,11 @@ _EVENT_REQUIRED_KEYS = (
     "idempotency_key",
     "operation_id",
 )
+_LEGACY_REQUIRED_KEYS = tuple(
+    key
+    for key in _EVENT_REQUIRED_KEYS
+    if key not in {"sequence", "idempotency_key", "operation_id"}
+)
 _ACTOR_TYPES = frozenset({"HUMAN_OPERATOR", "SYSTEM_VERIFIER"})
 _DECISIONS = frozenset({"PENDING", "APPROVED", "REJECTED", "REVOKED"})
 
@@ -115,9 +120,11 @@ def _canonical_event_hash(event: Mapping[str, Any]) -> str:
     return hashlib.sha256(canonical).hexdigest()
 
 
-def verify_event_chain(events: Any) -> list[dict[str, Any]]:
+def verify_event_chain(events: Any, *, schema_version: str = "1.1.0") -> list[dict[str, Any]]:
     if not isinstance(events, list):
         raise ValueError("audit log events must be a list")
+    legacy = schema_version == "1.0.0"
+    required_keys = _LEGACY_REQUIRED_KEYS if legacy else _EVENT_REQUIRED_KEYS
     verified: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
     seen_idempotency_keys: set[str] = set()
@@ -127,7 +134,7 @@ def verify_event_chain(events: Any) -> list[dict[str, Any]]:
     for index, event in enumerate(events):
         if not isinstance(event, dict):
             raise ValueError(f"audit log event at index {index} is not an object")
-        missing = [k for k in _EVENT_REQUIRED_KEYS if k not in event]
+        missing = [k for k in required_keys if k not in event]
         if missing:
             raise ValueError(
                 f"audit log event at index {index} is missing required fields: {missing}"
@@ -139,25 +146,26 @@ def verify_event_chain(events: Any) -> list[dict[str, Any]]:
             raise ValueError(f"audit log contains duplicate event_id: {event_id}")
         seen_ids.add(event_id)
 
-        sequence = event["sequence"]
-        if (
-            not isinstance(sequence, int)
-            or isinstance(sequence, bool)
-            or sequence != expected_sequence
-        ):
-            raise ValueError(f"audit log event at index {index} has invalid sequence")
-        expected_sequence += 1
+        if not legacy:
+            sequence = event["sequence"]
+            if (
+                not isinstance(sequence, int)
+                or isinstance(sequence, bool)
+                or sequence != expected_sequence
+            ):
+                raise ValueError(f"audit log event at index {index} has invalid sequence")
+            expected_sequence += 1
 
-        idempotency_key = event["idempotency_key"]
-        if not isinstance(idempotency_key, str) or not idempotency_key:
-            raise ValueError(f"audit log event at index {index} has invalid idempotency_key")
-        if idempotency_key in seen_idempotency_keys:
-            raise ValueError(f"audit log contains duplicate idempotency_key: {idempotency_key}")
-        seen_idempotency_keys.add(idempotency_key)
+            idempotency_key = event["idempotency_key"]
+            if not isinstance(idempotency_key, str) or not idempotency_key:
+                raise ValueError(f"audit log event at index {index} has invalid idempotency_key")
+            if idempotency_key in seen_idempotency_keys:
+                raise ValueError(f"audit log contains duplicate idempotency_key: {idempotency_key}")
+            seen_idempotency_keys.add(idempotency_key)
 
-        operation_id = event["operation_id"]
-        if not isinstance(operation_id, str) or not operation_id:
-            raise ValueError(f"audit log event at index {index} has invalid operation_id")
+            operation_id = event["operation_id"]
+            if not isinstance(operation_id, str) or not operation_id:
+                raise ValueError(f"audit log event at index {index} has invalid operation_id")
 
         if event["stage"] != "05b":
             raise ValueError(f"audit log event at index {index} has invalid stage")
@@ -266,7 +274,13 @@ def append_audit_event(
                 raise ValueError("audit log root must be a JSON object")
             if "events" not in doc:
                 raise ValueError("audit log is missing the events field")
-            verified_events = verify_event_chain(doc.get("events"))
+            doc_version = doc.get("schema_version")
+            if doc_version != "1.1.0":
+                raise ValueError(
+                    f"audit log schema_version {doc_version!r} is not appendable; "
+                    "migrate to 1.1.0 explicitly"
+                )
+            verified_events = verify_event_chain(doc.get("events"), schema_version=doc_version)
         else:
             doc = {
                 "schema_version": "1.1.0",

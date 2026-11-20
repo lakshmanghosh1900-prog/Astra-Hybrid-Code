@@ -43,5 +43,9 @@
     "status": "VALID",
     "validated_by": "Lakshman Ghosh",
     "validated_at_utc": "2026-11-19T13:06:00Z"
+  },
+  "signature": {
+    "key_id": "key-05b-prod-01",
+    "signature_base64": "3sKwVocIm1Aplw/huq6dNo5YMBfukRhVAySNrkUX9VDxMJf/Lf3h4tBQx1rIdqCPYyfzpTPMzlG/sB8LPtqVDA=="
   }
 }

@@ -14,10 +14,10 @@
   "authorization_reference": {
     "artifact": "authorization.json",
     "authorization_id": "auth-05b-20261119-01",
-    "sha256": "a383f8773deb0cb95474b50a6512cd5f1ed20631bb2ce2fab57de3661cddda0c",
-    "verification_status": "VERIFIED"
-  },
-  "license_reference": {
+      "sha256": "0e6e6b0296d6120511bf89e3cc0b7261134969df754471921e6b55fbd7f22eed",
+      "verification_status": "VERIFIED"
+    },
+    "license_reference": {
     "artifact": "license-check.json",
     "sha256": "863dc2698950a1bd4a4cbde24f29bb92253222dc863febd2bf004c284625708d",
     "verification_status": "VERIFIED"
@@ -27,7 +27,7 @@
       "source_id": "lic-init",
       "source_type": "repository_file",
       "source_path_or_uri": "src/astra_coder/license/__init__.py",
-      "sha256": "e0de673df5bac38ab4c5e99e90dfaadb846af7d8bcceaaebb658a680ad93a161",
+      "sha256": "0d0ffed286a2682c907c20c966918b18aa764d8220beb1b2bb89c1d94bdc75eb",
       "version_or_commit": "d4dc3164779d38055b8da06d824d3c4d9c607a22",
       "provenance": "local-repo:main@d4dc316",
       "license_reference": "docs/design/source-policy.md",
@@ -39,7 +39,7 @@
       "source_id": "lic-resolve-ref",
       "source_type": "repository_file",
       "source_path_or_uri": "src/astra_coder/license/resolve_reference.py",
-      "sha256": "542754a228addfd40466e1d211bd28121f6f4ccf5725e245a43a696386e2fea5",
+      "sha256": "7fa59756b39ba2e1267a7d1ae261e1bbfac8a0c5297ef01a2fc5e0245f41c974",
       "version_or_commit": "d4dc3164779d38055b8da06d824d3c4d9c607a22",
       "provenance": "local-repo:main@d4dc316",
       "license_reference": "docs/design/source-policy.md",
@@ -51,7 +51,7 @@
       "source_id": "lic-verify-digest",
       "source_type": "repository_file",
       "source_path_or_uri": "src/astra_coder/license/verify_digest.py",
-      "sha256": "22d39a6a0b09b2aee518a52cdf128f7ddcd6ae22bdb1b764379f6e21a54c32b3",
+      "sha256": "ec129fc51a18985e62b378ed84a90cc343df03bf3fd0c5a03a0c473cd10374ac",
       "version_or_commit": "d4dc3164779d38055b8da06d824d3c4d9c607a22",
       "provenance": "local-repo:main@d4dc316",
       "license_reference": "docs/design/source-policy.md",
@@ -63,7 +63,7 @@
       "source_id": "lic-decision",
       "source_type": "repository_file",
       "source_path_or_uri": "src/astra_coder/license/decision.py",
-      "sha256": "1f7aeda2c73df2decf38e09f434c413fd768029048a7f6cdfb95779d731360c7",
+      "sha256": "b2b01a867c26040b919dae3f6b67d93de607fad76829f498e12b51bce6238789",
       "version_or_commit": "d4dc3164779d38055b8da06d824d3c4d9c607a22",
       "provenance": "local-repo:main@d4dc316",
       "license_reference": "docs/design/source-policy.md",

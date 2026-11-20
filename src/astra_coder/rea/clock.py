@@ -14,6 +14,8 @@ def system_clock() -> datetime:
 
 
 def test_clock_enabled() -> bool:
+    if os.environ.get("ASTRA_REA_ENV") != "test":
+        return False
     return os.environ.get("ASTRA_REA_TEST_CLOCK") == "1"
 
 

@@ -31,8 +31,17 @@ from astra_coder.license import (
 
 from .clock import resolve_clock
 from .rbac import evaluate_rbac
-from .trust import TrustedKey, key_is_active, load_trusted_keys
+from .trust import TrustedKey, key_is_active, load_trusted_keys_detailed
 from .validation import parse_aware_utc, strict_sha256
+
+_REA_SCOPE = "STAGE_05B_REA"
+_ACTION_SCOPE: dict[str, str] = {
+    "RUN_REA_EXECUTION": _REA_SCOPE,
+    "APPROVE_STAGE_05B": _REA_SCOPE,
+    "REVOKE_AUTHORIZATION": _REA_SCOPE,
+    "RUN_AUDIT_ONLY": _REA_SCOPE,
+    "INSPECT_ARTIFACTS": _REA_SCOPE,
+}
 
 
 @dataclass(frozen=True)
@@ -54,6 +63,45 @@ def _strict_sha256(value: Any) -> str | None:
 
 def _parse_utc(value: Any) -> datetime | None:
     return parse_aware_utc(value)
+
+
+def _signed_scope_allows(auth_data: dict[str, Any], action: str) -> bool:
+    required = _ACTION_SCOPE.get(action, _REA_SCOPE)
+    auth_block = auth_data.get("authorization")
+    approved = auth_block.get("approved_actions") if isinstance(auth_block, dict) else None
+    if not isinstance(approved, list) or not all(isinstance(item, str) for item in approved):
+        return False
+    return required in approved or action in approved
+
+
+def _signature_key_id(auth_data: dict[str, Any]) -> str | None:
+    sig_block = auth_data.get("signature")
+    if not isinstance(sig_block, dict):
+        return None
+    key_id = sig_block.get("key_id")
+    return key_id if isinstance(key_id, str) and key_id.strip() else None
+
+
+def _resolve_bundle_scope(
+    auth_data: dict[str, Any], man_data: dict[str, Any]
+) -> tuple[str | None, str | None]:
+    digests: list[str] = []
+    for label, obj in (("R1 authorization", auth_data), ("R3 manifest", man_data)):
+        containers: list[tuple[str, dict[str, Any]]] = [(label, obj)]
+        for key in ("authorization", "manifest"):
+            nested = obj.get(key)
+            if isinstance(nested, dict):
+                containers.append((f"{label}.{key}", nested))
+        for container_label, container in containers:
+            if "bundle_sha256" not in container:
+                continue
+            digest = _strict_sha256(container["bundle_sha256"])
+            if digest is None:
+                return None, f"{container_label} bundle_sha256 is not strict lowercase 64-hex"
+            digests.append(digest)
+    if len(set(digests)) > 1:
+        return None, "conflicting bundle_sha256 values across signed artifacts"
+    return (digests[0] if digests else None), None
 
 
 def _load_json_object(path: Path, label: str) -> tuple[dict[str, Any] | None, str | None]:
@@ -138,9 +186,8 @@ def _verify_r1_signature(
     )
 
     try:
-        pub_key = Ed25519PublicKey.from_public_bytes(
-            _decode_pem_or_raw_public_key(trusted_key.public_key)
-        )
+        trusted_raw = _decode_pem_or_raw_public_key(trusted_key.public_key)
+        pub_key = Ed25519PublicKey.from_public_bytes(trusted_raw)
         sig_bytes = base64.b64decode(sig_b64, validate=True)
         pub_key.verify(sig_bytes, canonical_bytes)
     except InvalidSignature:
@@ -195,10 +242,10 @@ def enforce_rea_gate(
     actor_id: object,
     role: object,
     action: object = "RUN_REA_EXECUTION",
-    public_key_pem: object = None,
     now_utc: object = None,
     approver_id: object = None,
     self_certified: object = False,
+    require_scope_binding: object = False,
 ) -> ReaGateResult:
     checks: dict[str, bool] = {
         "rbac_ok": False,
@@ -226,14 +273,14 @@ def enforce_rea_gate(
         type_errors.append("role must be a string")
     if not isinstance(action, str):
         type_errors.append("action must be a string")
-    if public_key_pem is not None and not isinstance(public_key_pem, bytes | bytearray):
-        type_errors.append("public_key_pem must be bytes or None")
     if now_utc is not None and not isinstance(now_utc, datetime):
         type_errors.append("now_utc must be a datetime or None")
     if approver_id is not None and not isinstance(approver_id, str):
         type_errors.append("approver_id must be a string or None")
     if not isinstance(self_certified, bool):
         type_errors.append("self_certified must be a boolean")
+    if not isinstance(require_scope_binding, bool):
+        type_errors.append("require_scope_binding must be a boolean")
     if type_errors:
         return deny([f"Invalid gate input types: {', '.join(type_errors)}"])
 
@@ -241,16 +288,25 @@ def enforce_rea_gate(
     assert isinstance(actor_id, str)
     assert isinstance(role, str)
     assert isinstance(action, str)
-    assert public_key_pem is None or isinstance(public_key_pem, bytes | bytearray)
     assert now_utc is None or isinstance(now_utc, datetime)
     assert approver_id is None or isinstance(approver_id, str)
     assert isinstance(self_certified, bool)
+    assert isinstance(require_scope_binding, bool)
 
     now, clock_error = resolve_clock(now_utc)
     if clock_error is not None or now is None:
         return deny([f"R1 clock policy failed: {clock_error or 'unknown clock error'}"])
 
     root = Path(repo_root).resolve()
+    key_load = load_trusted_keys_detailed()
+    if key_load.error is not None or not key_load.keys:
+        return deny(
+            [
+                "R1 trusted-key registry unavailable: "
+                f"{key_load.error or 'no active trusted keys configured'}"
+            ],
+            now,
+        )
     reasons: list[str] = []
 
     auth_path = root / "authorization.json"
@@ -278,14 +334,19 @@ def enforce_rea_gate(
 
     auth_sha = _sha256_file(auth_path)
     auth_block = auth_data.get("authorization")
-    auth_id = auth_block.get("authorization_id") if isinstance(auth_block, dict) else None
-    if not isinstance(auth_id, str):
-        auth_id = None
+    auth_id_raw = auth_block.get("authorization_id") if isinstance(auth_block, dict) else None
+    auth_id = auth_id_raw if isinstance(auth_id_raw, str) and auth_id_raw.strip() else None
+    scope_ok = _signed_scope_allows(auth_data, action)
+    bundle_sha, bundle_err = _resolve_bundle_scope(auth_data, man_data)
     approver_context: dict[str, Any] = {
         "authorization_id": auth_id,
         "artifact_sha256": auth_sha,
+        "bundle_sha256": bundle_sha,
+        "signing_key_id": _signature_key_id(auth_data),
         "now": now,
     }
+    if bundle_err is not None:
+        reasons.append(f"R1/R3 {bundle_err}")
 
     rbac = evaluate_rbac(
         actor_id=actor_id,
@@ -294,13 +355,14 @@ def enforce_rea_gate(
         approver_id=approver_id,
         self_certified=self_certified,
         approver_context=approver_context,
+        require_scope_binding=require_scope_binding,
     )
     checks["rbac_ok"] = rbac.allowed
     if not rbac.allowed:
         reasons.append(f"RBAC denied: {rbac.reason}")
 
     expiry_dt, expiry_err = _resolve_expiry(auth_data)
-    sig_ok, sig_msg = _verify_r1_signature(auth_data, load_trusted_keys(), now)
+    sig_ok, sig_msg = _verify_r1_signature(auth_data, key_load.keys, now)
     state_err = _validate_authorization_state(auth_data)
     expired = expiry_dt is not None and now > expiry_dt
     if expiry_err is not None:
@@ -311,8 +373,18 @@ def enforce_rea_gate(
         reasons.append(sig_msg)
     if state_err is not None:
         reasons.append(state_err)
+    if auth_id is None:
+        reasons.append("R1 authorization_id missing or invalid")
+    if not scope_ok:
+        reasons.append(f"R1 authorization approved_actions does not permit {action}")
     checks["r1_present_and_valid"] = (
-        expiry_err is None and not expired and sig_ok and state_err is None
+        expiry_err is None
+        and not expired
+        and sig_ok
+        and state_err is None
+        and auth_id is not None
+        and scope_ok
+        and bundle_err is None
     )
 
     result_obj = lic_data.get("result")

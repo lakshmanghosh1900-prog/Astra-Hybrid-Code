@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 from uuid import UUID
@@ -13,6 +14,7 @@ from .config import load_settings
 from .free_cascade import build_free_cascade_gateway
 from .persistence import AuditLog, StateStore
 from .policy import Actor, PolicyConfig, PolicyEngine
+from .rea.enforcement import require_stage05b_execution
 from .runtime import RiskTier, Task
 from .service import ServiceError, SubmitRequest, TaskService
 
@@ -128,6 +130,40 @@ def cancel(task_id: UUID) -> None:
         output(service().cancel(actor(), task_id), False)
     except ServiceError as exc:
         raise typer.BadParameter(str(exc)) from exc
+
+
+@app.command(name="rea-gate")
+def rea_gate(
+    repo: Path = typer.Option(..., "--repo", exists=True, file_okay=False),  # noqa: B008
+    actor_id: str = typer.Option(..., "--actor-id"),
+    role: str = typer.Option(..., "--role"),
+    approver_id: str | None = typer.Option(None, "--approver-id"),
+    action: str = typer.Option("RUN_REA_EXECUTION", "--action"),
+    audit_log: Path | None = typer.Option(None, "--audit-log"),  # noqa: B008
+) -> None:
+    """Evaluate the Stage 05b REA gate and record a fail-closed audit event."""
+    result = require_stage05b_execution(
+        repo_root=repo,
+        actor_id=actor_id,
+        role=role,
+        action=action,
+        approver_id=approver_id,
+        audit_log_path=audit_log,
+    )
+    typer.echo(
+        json.dumps(
+            {
+                "allowed": result.allowed,
+                "stage": result.stage,
+                "checks": result.checks,
+                "blocking_reasons": result.blocking_reasons,
+                "evaluated_at_utc": result.evaluated_at_utc,
+            },
+            sort_keys=True,
+        )
+    )
+    if not result.allowed:
+        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":

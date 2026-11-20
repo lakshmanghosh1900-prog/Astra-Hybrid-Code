@@ -17,6 +17,7 @@ from .free_cascade import CascadePlanBuilder, build_free_cascade_gateway
 from .memory_engine import AstraMemoryEngine
 from .persistence import AuditLog, StateStore
 from .policy import Actor, PolicyConfig, PolicyEngine
+from .rea.enforcement import require_stage05b_execution
 from .redaction import SecretRedactor
 from .runtime import Task
 from .sandbox import DockerSandbox
@@ -77,6 +78,19 @@ def main() -> int:
     settings = load_settings()
     if settings.repo_root is None or not settings.repo_root.is_dir():
         raise RuntimeError("worker requires an existing ASTRA_REPO_ROOT")
+    audit_log_raw = os.environ.get("ASTRA_REA_AUDIT_LOG")
+    gate_result = require_stage05b_execution(
+        repo_root=settings.repo_root,
+        actor_id=os.environ.get("ASTRA_REA_ACTOR_ID", ""),
+        role=os.environ.get("ASTRA_REA_ACTOR_ROLE", ""),
+        action="RUN_REA_EXECUTION",
+        approver_id=os.environ.get("ASTRA_REA_APPROVER_ID"),
+        audit_log_path=Path(audit_log_raw) if audit_log_raw else None,
+    )
+    if not gate_result.allowed:
+        raise RuntimeError(
+            f"Stage 05b REA gate denied worker execution: {gate_result.blocking_reasons}"
+        )
     sandbox = DockerSandbox()
     image = os.environ.get("ASTRA_SANDBOX_IMAGE", "astracoder-api:local")
     if not sandbox.available:

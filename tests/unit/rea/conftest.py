@@ -31,12 +31,15 @@ def rea_trust_environment(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
                         "role": "HUMAN_APPROVER",
                         "status": "ACTIVE",
                         "allowed_actions": ["APPROVE_STAGE_05B", "RUN_REA_EXECUTION"],
+                        "authorization_id": "auth-05b-20261119-01",
+                        "artifact_sha256": "0" * 64,
                     }
                 }
             }
         ),
         encoding="utf-8",
     )
+    monkeypatch.setenv("ASTRA_REA_ENV", "test")
     monkeypatch.setenv("ASTRA_REA_TEST_CLOCK", "1")
     monkeypatch.setenv("ASTRA_REA_TRUSTED_KEYS_PATH", str(key_path))
     monkeypatch.setenv("ASTRA_REA_APPROVER_REGISTRY_PATH", str(approver_path))

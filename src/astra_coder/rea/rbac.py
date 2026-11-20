@@ -8,6 +8,7 @@ from datetime import datetime
 from typing import Literal
 
 from .trust import validate_trusted_approver
+from .validation import strict_sha256
 
 RoleName = Literal["HUMAN_APPROVER", "OPERATOR", "REVIEWER", "EXECUTOR", "AGENT"]
 ActionName = Literal[
@@ -66,6 +67,7 @@ def evaluate_rbac(
     approver_id: object = None,
     self_certified: object = False,
     approver_context: object = None,
+    require_scope_binding: object = False,
 ) -> RbacDecision:
     actor_out = actor_id if isinstance(actor_id, str) else ""
     role_out = role if isinstance(role, str) else ""
@@ -79,6 +81,7 @@ def evaluate_rbac(
         or (approver_id is not None and not isinstance(approver_id, str))
         or not isinstance(self_certified, bool)
         or (approver_context is not None and not isinstance(approver_context, Mapping))
+        or not isinstance(require_scope_binding, bool)
     ):
         return RbacDecision(
             allowed=False,
@@ -94,10 +97,13 @@ def evaluate_rbac(
     assert approver_id is None or isinstance(approver_id, str)
     assert isinstance(self_certified, bool)
     assert approver_context is None or isinstance(approver_context, Mapping)
+    assert isinstance(require_scope_binding, bool)
 
     clean_actor = actor_id.strip()
     clean_role = role.strip().upper()
     clean_action = action.strip().upper()
+    clean_approver = approver_out.strip() if approver_out is not None else ""
+    context = dict(approver_context or {})
 
     if not clean_actor:
         return RbacDecision(
@@ -107,6 +113,47 @@ def evaluate_rbac(
             action=clean_action,
             reason="Missing actor_id",
         )
+
+    signing_principal = context.get("signing_key_id")
+    if isinstance(signing_principal, str) and signing_principal.strip():
+        clean_signer = signing_principal.strip()
+        if clean_approver and clean_signer == clean_approver:
+            return RbacDecision(
+                allowed=False,
+                actor_id=clean_actor,
+                role=clean_role,
+                action=clean_action,
+                reason="Signing principal must be separated from approving principal",
+            )
+        if clean_signer == clean_actor:
+            return RbacDecision(
+                allowed=False,
+                actor_id=clean_actor,
+                role=clean_role,
+                action=clean_action,
+                reason="Signing principal must be separated from acting principal",
+            )
+
+    if require_scope_binding:
+        if (
+            not isinstance(context.get("authorization_id"), str)
+            or not context["authorization_id"].strip()
+        ):
+            return RbacDecision(
+                allowed=False,
+                actor_id=clean_actor,
+                role=clean_role,
+                action=clean_action,
+                reason="Scope binding requires an authorization_id in approval context",
+            )
+        if strict_sha256(context.get("artifact_sha256")) is None:
+            return RbacDecision(
+                allowed=False,
+                actor_id=clean_actor,
+                role=clean_role,
+                action=clean_action,
+                reason="Scope binding requires an artifact_sha256 in approval context",
+            )
 
     if clean_role not in _ROLE_PERMISSIONS:
         return RbacDecision(
@@ -127,7 +174,6 @@ def evaluate_rbac(
         )
 
     if clean_role == "HUMAN_APPROVER" and clean_action in _APPROVAL_ACTIONS:
-        context = dict(approver_context or {})
         raw_now = context.get("now")
         now = raw_now if isinstance(raw_now, datetime) else None
         approver_error = validate_trusted_approver(clean_actor, clean_action, context, now)
@@ -140,7 +186,7 @@ def evaluate_rbac(
                 reason=approver_error,
             )
 
-    if clean_role in {"EXECUTOR", "AGENT"} and self_certified:
+    if clean_role in _APPROVAL_REQUIRED_ROLES and self_certified:
         return RbacDecision(
             allowed=False,
             actor_id=clean_actor,
@@ -149,7 +195,6 @@ def evaluate_rbac(
             reason=f"Role {clean_role} cannot self-certify execution",
         )
 
-    clean_approver = approver_out.strip() if approver_out is not None else ""
     if (
         clean_action in _APPROVAL_ACTIONS
         and clean_approver
@@ -162,6 +207,15 @@ def evaluate_rbac(
             role=clean_role,
             action=clean_action,
             reason="Self-authorization by executor/agent/operator is prohibited",
+        )
+
+    if clean_approver and clean_approver == clean_actor:
+        return RbacDecision(
+            allowed=False,
+            actor_id=clean_actor,
+            role=clean_role,
+            action=clean_action,
+            reason="Actor and approver principals must be separated",
         )
 
     if (
@@ -181,7 +235,6 @@ def evaluate_rbac(
         )
 
     if clean_action in _APPROVAL_ACTIONS and clean_approver:
-        context = dict(approver_context or {})
         raw_now = context.get("now")
         now = raw_now if isinstance(raw_now, datetime) else None
         error = validate_trusted_approver(clean_approver, clean_action, context, now)
