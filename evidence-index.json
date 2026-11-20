@@ -2,7 +2,7 @@
   "schema_version": "1.0.0",
   "artifact_type": "ASTRA_CODER_STAGE05B_EVIDENCE_INDEX",
   "stage": "05b",
-  "source_commit": "088fd9e70500da9e4d49a01707f0de0d1dc6c958",
+  "source_commit": "a2a3b875d62479f0909f9c74a82e265fdbba96a3",
   "baseline_commit": "00807102f074db4f96a1fd01f4594dbe58e48b0d",
   "generated_on": "2026-11-21",
   "schema_validation": "UNAVAILABLE - no authoritative repository schema exists for R4; JSON syntax validated only",
@@ -108,11 +108,11 @@
       "reviewer_status": "UNREVIEWED"
     },
     {
-      "path": "reports/stage05b-section4-evidence.md",
+      "path": "reports/stage05b-section4-evidence-a2a3b87.md",
       "type": "report",
-      "source_commit": "00807102f074db4f96a1fd01f4594dbe58e48b0d",
-      "sha256": "42d37b8b882700f4ffaa7acea9673c0a48bb11e09a777e0eb8dd3c982cc04b25",
-      "command_or_report": "reports/stage05b-section4-evidence.md - documented Section 4 evidence on clean baseline checkout; NOT re-run in this task",
+      "source_commit": "a2a3b875d62479f0909f9c74a82e265fdbba96a3",
+      "sha256": "c5fcac59e2dbcd27b16872b409df4ce54c345be22188ca3939bf8e0098e7d616",
+      "command_or_report": "reports/stage05b-section4-evidence-a2a3b87.md - fresh Section 4 evidence on a2a3b87; pytest 491 passed, ruff 0, mypy 0, gitleaks 0 leaks",
       "timestamp": "2026-11-21",
       "scope": "section4",
       "verification_status": "PARTIAL",
@@ -225,6 +225,17 @@
       "command_or_report": "gh run 44767963636 (push) quality SUCCESS per reports/stage05b-section4-evidence.md:31; NOT re-verified in this task",
       "timestamp": "2026-11-20",
       "scope": "section4",
+      "verification_status": "PARTIAL",
+      "reviewer_status": "UNREVIEWED"
+    },
+    {
+      "path": "rea-verification.json",
+      "type": "artifact",
+      "source_commit": "a2a3b875d62479f0909f9c74a82e265fdbba96a3",
+      "sha256": "20865e368320fb1dd8b56c2ac14aef852e0a601c4c82471bd7d79989f436b89d",
+      "command_or_report": "R8 rea-verification.json - updated with fresh a2a3b87 Section 4 evidence; final_status PARTIAL; baseline_distinction CURRENT_TREE_a2a3b87",
+      "timestamp": "2026-11-21",
+      "scope": "stage05b",
       "verification_status": "PARTIAL",
       "reviewer_status": "UNREVIEWED"
     }
