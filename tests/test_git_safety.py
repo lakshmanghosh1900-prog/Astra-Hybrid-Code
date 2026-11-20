@@ -62,3 +62,17 @@ def test_unsafe_task_id_and_root_rollback_are_rejected(tmp_path: Path) -> None:
     # Clean up the actual task worktree after the safety assertion.
     manager._workspaces["task-3"] = workspace
     manager.rollback("task-3")
+
+
+def test_status_is_scoped_to_task_worktree(tmp_path: Path) -> None:
+    root = make_repo(tmp_path)
+    manager = GitSafety(root, worktree_parent=tmp_path / "worktrees")
+    workspace = manager.create_worktree("task-status")
+    try:
+        (root / "user.txt").touch()
+        (workspace.path / "task.txt").touch()
+        assert manager.task_status_porcelain("task-status") == "?? task.txt\x00"
+        with pytest.raises(GitSafetyError, match="unknown task workspace"):
+            manager.task_status_porcelain("missing")
+    finally:
+        manager.rollback("task-status")

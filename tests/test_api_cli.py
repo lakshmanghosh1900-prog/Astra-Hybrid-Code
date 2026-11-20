@@ -7,6 +7,7 @@ from typer.testing import CliRunner
 from astra_coder.api import create_app, create_service
 from astra_coder.cli import app
 from astra_coder.config import Settings, load_settings
+from astra_coder.git_safety import GitSafety
 from astra_coder.persistence import StateStore
 from astra_coder.policy import Actor, PolicyConfig, PolicyEngine
 from astra_coder.runtime import RiskTier, Task, TaskState
@@ -50,12 +51,72 @@ def test_api_submit_approval_cancel_and_sse(tmp_path: Path) -> None:
     )
     assert stream.status_code == 200
     assert "event: audit" in stream.text
+    ids = [int(line[4:]) for line in stream.text.splitlines() if line.startswith("id: ")]
+    assert len(ids) > 1
+    resumed = client.get(
+        f"/tasks/{task_id}/events",
+        params={"after": ids[0]},
+        headers={"Authorization": "Bearer developer-token"},
+    )
+    assert resumed.status_code == 200
+    assert resumed.text == stream.text.split("\n\n", 1)[1]
 
     cancelled = client.post(
         f"/tasks/{task_id}/cancel", headers={"Authorization": "Bearer developer-token"}
     )
     assert cancelled.status_code == 200
     assert cancelled.json()["state"] == "cancelled"
+
+
+def test_api_diff_reads_only_registered_task_worktree(tmp_path: Path) -> None:
+    root = make_repo(tmp_path)
+    client = TestClient(
+        create_app(
+            TaskService(StateStore("sqlite:///:memory:"), PolicyEngine()), settings=settings()
+        )
+    )
+    headers = {"Authorization": "Bearer developer-token"}
+    submitted = client.post(
+        "/tasks",
+        json={"prompt": "bounded change", "repo_path": str(root), "risk": "T2"},
+        headers=headers,
+    )
+    assert submitted.status_code == 201
+    task_id = submitted.json()["id"]
+    url = f"/tasks/{task_id}/diff"
+    (root / "user.txt").touch()
+    assert client.get(url, headers=headers).status_code == 409
+    manager = GitSafety(root)
+    workspace = manager.create_worktree(task_id)
+    try:
+        (workspace.path / "task.txt").touch()
+        response = client.get(url, headers=headers)
+        assert response.status_code == 200
+        assert response.json() == {"task_id": task_id, "diff": "?? task.txt\x00"}
+    finally:
+        manager.rollback(task_id)
+    assert client.get(url, headers=headers).status_code == 409
+
+
+def test_api_reviewer_denial_is_persisted(tmp_path: Path) -> None:
+    store = StateStore("sqlite:///:memory:")
+    client = TestClient(create_app(TaskService(store, PolicyEngine()), settings=settings()))
+    developer = {"Authorization": "Bearer developer-token"}
+    reviewer = {"Authorization": "Bearer reviewer-token"}
+    submitted = client.post(
+        "/tasks",
+        json={"prompt": "bounded change", "repo_path": str(make_repo(tmp_path)), "risk": "T2"},
+        headers=developer,
+    )
+    assert submitted.status_code == 201
+    task_id = submitted.json()["id"]
+    url = f"/tasks/{task_id}"
+    denied = client.post(f"{url}/deny", json={"reason": "outside scope"}, headers=reviewer)
+    assert denied.status_code == 200
+    assert denied.json()["state"] == "blocked"
+    task = store.get_task(task_id)
+    assert task is not None
+    assert task.failure_reason == "outside scope"
 
 
 def test_api_rejects_missing_or_caller_supplied_identity(tmp_path: Path) -> None:

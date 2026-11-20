@@ -319,9 +319,9 @@ class TaskService:
     def diff(self, actor: Actor, task_id: UUID | str) -> str:
         task = self.get(actor, task_id)
         try:
-            return GitSafety(task.repo_path).status_porcelain()
-        except (GitSafetyError, OSError):
-            return ""
+            return GitSafety(task.repo_path).task_status_porcelain(str(task.id))
+        except (GitSafetyError, OSError, RuntimeError) as exc:
+            raise ServiceError("task worktree is unavailable") from exc
 
     def events(self, actor: Actor, task_id: UUID | str) -> tuple[AuditEvent, ...]:
         self.get(actor, task_id)

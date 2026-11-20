@@ -76,7 +76,9 @@ def create_app(
         message = str(exc)
         if message == "task not found":
             status = 404
-        elif "terminal" in message or "state" in message:
+        elif (
+            message == "task worktree is unavailable" or "terminal" in message or "state" in message
+        ):
             status = 409
         elif "authentication" in message:
             status = 401
