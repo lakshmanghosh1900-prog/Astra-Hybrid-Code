@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_type": "ASTRA_CODER_STAGE05B_VERIFICATION",
+  "stage": "05b",
+  "source_commit": "088fd9e70500da9e4d49a01707f0de0d1dc6c958",
+  "baseline_commit": "00807102f074db4f96a1fd01f4594dbe58e48b0d",
+  "generated_on": "2026-11-21",
+  "schema_validation": "UNAVAILABLE - no authoritative repository schema exists for R8; JSON syntax validated only",
+  "artifact_hashes": {
+    "R1_authorization.json": "0e6e6b0296d6120511bf89e3cc0b7261134969df754471921e6b55fbd7f22eed",
+    "R2_license-check.json": "863dc2698950a1bd4a4cbde24f29bb92253222dc863febd2bf004c284625708d",
+    "R3_rea-input-manifest.json": "a1ff8bd8814970132d5a82ca1684d9f3f8efb5aca08a6d9bc548e3a392669106",
+    "R4_evidence-index.json": "194c1b61e957ae761b4ebbb98752f92c660729a405d7b8d6a4fdf18fd35dbc46",
+    "R5_spec.md": "740a37877b2a47e30be969a6c6192c7bfc491dd01d8e7c9b684a58fa3f9c9896",
+    "R6_unknowns.json": "2bd935167c228aecb5500c061ebbf641530ac1d36976c5f4a92a0e7b0f996e0b",
+    "R7_rea-policy-review.json": "6b6b7bc2d74a4f7d6ebb7fd1807b6282e5dc9d5d75bbb567afb0ea50388fa15d"
+  },
+  "self_reference_policy": "R8 SHA-256 is intentionally NOT recorded inside R8; it must be computed externally after finalization.",
+  "circular_reference_policy": "R4 contains no reference to R8. R8 references R4 by hash only. No circular R4/R8 hash references.",
+  "pytest_result": {
+    "command": "python -B -m pytest -p no:cacheprovider --override-ini 'addopts=--strict-markers' -q",
+    "exit_code": 0,
+    "passed": 491,
+    "failed": 0,
+    "skipped": 2,
+    "warnings": 1,
+    "source": "reports/stage05b-section4-evidence.md:12 (historical, clean checkout of 0080710; NOT re-run in this task)"
+  },
+  "ruff_result": {
+    "targeted_check_command": "python -m ruff check --no-cache scripts/validate_r1_r3.py",
+    "targeted_check_exit_code": 0,
+    "targeted_check_findings": "All checks passed!",
+    "scripts_validate_r1_r3_status": "FIXED - UTF-8 BOM removed (first bytes 69 6d 70 6f 72 74) and stdlib/third-party import groups separated; script logic unchanged; Ruff I001 resolved",
+    "historical_full_scope_check": {
+      "command": "python -B -m ruff check --no-cache src tests",
+      "exit_code": 0,
+      "findings": "All checks passed!",
+      "source": "reports/stage05b-section4-evidence.md:13 (baseline 0080710; NOT re-run in this task)"
+    },
+    "historical_format_check": {
+      "command": "python -B -m ruff format --check --no-cache src tests",
+      "exit_code": 0,
+      "findings": "72 files already formatted",
+      "source": "reports/stage05b-section4-evidence.md:14 (baseline 0080710; NOT re-run in this task)"
+    },
+    "targeted_format_check": "NOT_RUN - only the specifically authorized targeted checks were run"
+  },
+  "mypy_result": {
+    "command": "python -B -m mypy --cache-dir=.../astra-mypy-cache src",
+    "exit_code": 0,
+    "files_checked": 43,
+    "source": "reports/stage05b-section4-evidence.md:15 (historical, baseline 0080710; NOT re-run in this task)"
+  },
+  "gitleaks_result": {
+    "command": ".tools/gitleaks.exe/gitleaks.exe git --no-banner --verbose",
+    "exit_code": 0,
+    "commits_scanned": 90,
+    "leaks_found": 0,
+    "suppressions": 2,
+    "suppression_detail": "Finding-level suppressions in .gitleaksignore for reports/d54-dockerfile-verify-20261025.md lines 38 and 117 (pre-existing false positives); see reports/stage05b-section4-evidence.md:18-23",
+    "source": "reports/stage05b-section4-evidence.md:16 (historical, baseline 0080710; NOT re-run in this task)"
+  },
+  "ci_run_ids": [
+    "44767974342",
+    "44767963636"
+  ],
+  "notes_and_warnings": [
+    "Full Section 4 PASS is NOT CLAIMED at current base 088fd9e; historical evidence exists only at 0080710.",
+    "Operational gate execution, Worker/REA live execution, Docker, signing, private-key access, deployment, release, and certification: NOT_PERFORMED.",
+    "External trusted-key and trusted-approver registry contents: NOT_VERIFIED; registry files were not read.",
+    "Top-level Ed25519 authorization signature: structurally present, operational verification NOT_RUN.",
+    "Signer-to-human identity binding: GAP documented with human risk acceptance in reports/stage05b-signer-risk-acceptance.md; no cryptographic fix claimed.",
+    "No authoritative schema exists for R4-R8; JSON syntax validation only. Approved Section F structures were supplied in the task prompt, not as a repository schema file.",
+    "Protected hashes verified before and after work: reports/worker-smoke.json = 3045C669207D0ADDCDF117EA37B6CBF82E595C67FA6AAAD018B3B6645326D5D8; authorization.json = 0E6E6B0296D6120511BF89E3CC0B7261134969DF754471921E6B55FBD7F22EED.",
+    "Stage 05b: NOT CERTIFIED. Stage 07: NOT AUTHORIZED."
+  ],
+  "baseline_comparison": "Current tree 088fd9e differs from baseline 0080710 by documented PR #23/#24/#25/#26 docs and scope-binding fix merges. This branch adds only the approved BOM/Ruff header fix in scripts/validate_r1_r3.py plus R4-R8 artifacts. Protected files unchanged by hash. Historical verification results are from baseline 0080710 and were not re-run at 088fd9e.",
+  "final_status": "PARTIAL",
+  "independent_reviewer_disposition": "NOT CERTIFIED - PENDING independent review and human closure approval"
+}

@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_type": "ASTRA_CODER_STAGE05B_POLICY_REVIEW",
+  "stage": "05b",
+  "source_commit": "088fd9e70500da9e4d49a01707f0de0d1dc6c958",
+  "generated_on": "2026-11-21",
+  "schema_validation": "UNAVAILABLE - no authoritative repository schema exists for R7; JSON syntax validated only",
+  "review_basis": "Static source and artifact inspection only; no gate execution, no registry inspection, no live REA/Worker run",
+  "policy_checks_performed": [
+    {
+      "id": "P-01",
+      "check": "No caller-supplied public_key_pem; public key comes only from the file-based trust loader",
+      "code_reference": "src/astra_coder/rea/gate.py:239-249,161-202; src/astra_coder/rea/trust.py:25-26,65-132",
+      "result": "PASS",
+      "evidence": "enforce_rea_gate has no public-key parameter; _verify_r1_signature resolves key_id against load_trusted_keys_detailed() output"
+    },
+    {
+      "id": "P-02",
+      "check": "authorization_id mandatory; artifact_sha256 scope binding; production helper requires binding and gate/rbac defaults now True",
+      "code_reference": "src/astra_coder/rea/gate.py:248,335-347,376-388; src/astra_coder/rea/rbac.py:70,146-165; src/astra_coder/rea/enforcement.py:21-29; src/astra_coder/rea/trust.py:250-267",
+      "result": "PASS",
+      "evidence": "require_scope_binding defaults True at gate.py:248 and rbac.py:70; enforcement.py:28 remains True; authorization_id always required"
+    },
+    {
+      "id": "P-03",
+      "check": "Signed approved_actions enforcement",
+      "code_reference": "src/astra_coder/rea/gate.py:37-44,68-74,183-192,378-388",
+      "result": "PASS",
+      "evidence": "approved_actions is inside the canonical JSON payload covered by the Ed25519 signature; scope token STAGE_05B_REA is required for mapped actions"
+    },
+    {
+      "id": "P-04",
+      "check": "OPERATOR self-certified denial and actor/approver separation",
+      "code_reference": "src/astra_coder/rea/rbac.py:49,137-145,207-228",
+      "result": "PASS",
+      "evidence": "Self-certification guard now precedes scope-binding guard; actor and approver principals must differ"
+    },
+    {
+      "id": "P-05",
+      "check": "Signer/actor/approver separation bound to authenticated human principal",
+      "code_reference": "src/astra_coder/rea/rbac.py:117-135; reports/stage05b-signer-risk-acceptance.md:8-43",
+      "result": "PARTIAL",
+      "evidence": "Cross-namespace key-ID vs human-ID string comparison; human risk acceptance recorded, no cryptographic binding proven"
+    },
+    {
+      "id": "P-06",
+      "check": "Dual-flag TEST_CLOCK",
+      "code_reference": "src/astra_coder/rea/clock.py:16-31; src/astra_coder/rea/gate.py:296-298",
+      "result": "PASS",
+      "evidence": "Caller-supplied now_utc requires ASTRA_REA_ENV=test AND ASTRA_REA_TEST_CLOCK=1"
+    },
+    {
+      "id": "P-07",
+      "check": "File-based trust only, fail-closed",
+      "code_reference": "src/astra_coder/rea/trust.py:1-9,65-88,102-193; src/astra_coder/rea/gate.py:301-309",
+      "result": "PASS",
+      "evidence": "Env-named registry files with no in-code fallback; missing, unreadable, or malformed registries yield explicit denial"
+    },
+    {
+      "id": "P-08",
+      "check": "Protected artifacts unchanged and full Section 4 PASS",
+      "code_reference": "reports/stage05b-section4-evidence.md:10-37; docs/blueprint/FINAL-BLUEPRINT-AUTONOMOUS.md:39-49",
+      "result": "PARTIAL",
+      "evidence": "Protected hashes match; Section 4 evidence is historical at 0080710 and was not re-run at 088fd9e in this task"
+    }
+  ],
+  "authorization_decision": "PARTIAL - authorization.json present with key-05b-prod-01 signature block and protected hash; Ed25519 verification NOT RUN",
+  "license_decision": "PARTIAL - license-check.json present and hash matches manifest cross-reference; license gate NOT RUN",
+  "rbac_decision": "PARTIAL - deny paths and role rules present in code; external approver registry contents NOT_VERIFIED",
+  "signer_approver_separation": "PARTIAL - signer key ID compared to human principal strings; no cryptographic binding; documented human risk acceptance exists in reports/stage05b-signer-risk-acceptance.md",
+  "scope_binding_result": "PASS - require_scope_binding defaults True in gate.py:248 and rbac.py:70; production helper unchanged at enforcement.py:28; deny remains fail-closed",
+  "registry_sources": [
+    {
+      "name": "trusted_keys",
+      "reference": "environment variable ASTRA_REA_TRUSTED_KEYS_PATH (file-based registry, external to repo)",
+      "contents": "NOT_VERIFIED",
+      "secret_material": "NONE_INCLUDED"
+    },
+    {
+      "name": "trusted_approvers",
+      "reference": "environment variable ASTRA_REA_APPROVER_REGISTRY_PATH (file-based registry, external to repo)",
+      "contents": "NOT_VERIFIED",
+      "secret_material": "NONE_INCLUDED"
+    }
+  ],
+  "reviewer_identity_and_role": "PENDING - no independent reviewer identity or role recorded in repository evidence for closure",
+  "review_timestamp": "NOT_PERFORMED - independent closure review not recorded",
+  "approval_or_denial": "PENDING - no Stage 05b closure approval recorded; NOT CERTIFIED",
+  "unresolved_risks": [
+    "UNK-05B-02: external trusted registry contents NOT_VERIFIED",
+    "UNK-05B-03: operational authorization signature verification NOT RUN",
+    "UNK-05B-04: independent review and human closure approval PENDING",
+    "UNK-05B-05: full Section 4 PASS NOT CLAIMED at current base",
+    "UNK-05B-06: no authoritative schema for R4-R8"
+  ],
+  "final_status": "PARTIAL",
+  "stage_07_status": "NOT AUTHORIZED"
+}

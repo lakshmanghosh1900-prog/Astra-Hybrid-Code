@@ -1,5 +1,6 @@
-﻿import json
+import json
 from pathlib import Path
+
 from jsonschema import Draft202012Validator
 
 REPO = Path(r"C:\Users\User\Desktop\ASTRA CODER")
