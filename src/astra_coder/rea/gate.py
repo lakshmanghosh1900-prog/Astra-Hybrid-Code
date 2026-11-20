@@ -245,7 +245,7 @@ def enforce_rea_gate(
     now_utc: object = None,
     approver_id: object = None,
     self_certified: object = False,
-    require_scope_binding: object = False,
+    require_scope_binding: object = True,
 ) -> ReaGateResult:
     checks: dict[str, bool] = {
         "rbac_ok": False,

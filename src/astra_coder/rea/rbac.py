@@ -67,7 +67,7 @@ def evaluate_rbac(
     approver_id: object = None,
     self_certified: object = False,
     approver_context: object = None,
-    require_scope_binding: object = False,
+    require_scope_binding: object = True,
 ) -> RbacDecision:
     actor_out = actor_id if isinstance(actor_id, str) else ""
     role_out = role if isinstance(role, str) else ""
@@ -134,6 +134,15 @@ def evaluate_rbac(
                 reason="Signing principal must be separated from acting principal",
             )
 
+    if clean_role in _APPROVAL_REQUIRED_ROLES and self_certified:
+        return RbacDecision(
+            allowed=False,
+            actor_id=clean_actor,
+            role=clean_role,
+            action=clean_action,
+            reason=f"Role {clean_role} cannot self-certify execution",
+        )
+
     if require_scope_binding:
         if (
             not isinstance(context.get("authorization_id"), str)
@@ -185,15 +194,6 @@ def evaluate_rbac(
                 action=clean_action,
                 reason=approver_error,
             )
-
-    if clean_role in _APPROVAL_REQUIRED_ROLES and self_certified:
-        return RbacDecision(
-            allowed=False,
-            actor_id=clean_actor,
-            role=clean_role,
-            action=clean_action,
-            reason=f"Role {clean_role} cannot self-certify execution",
-        )
 
     if (
         clean_action in _APPROVAL_ACTIONS
