@@ -141,10 +141,21 @@ class GitSafety:
         return self._git_text(["status", "--porcelain=v1", "-z"])
 
     def task_status_porcelain(self, task_id: str) -> str:
-        workspace = self._workspace(task_id)
-        if workspace.path.resolve() == self.root:
+        self._validate_task_id(task_id)
+        path = self.worktree_parent / task_id
+        if path.resolve() != path or path == self.root:
             raise GitSafetyError("refusing to read root status as task status")
-        return self._git_text(["status", "--porcelain=v1", "-z"], cwd=workspace.path)
+        registered = self._git_text(["worktree", "list", "--porcelain", "-z"]).split("\x00")
+        if not path.is_dir() or not any(
+            entry.startswith("worktree ") and Path(entry[9:]) == path for entry in registered
+        ):
+            raise GitSafetyError("unknown task workspace")
+        common_dir = ["rev-parse", "--path-format=absolute", "--git-common-dir"]
+        if Path(self._git_text(common_dir, cwd=path)) != Path(self._git_text(common_dir)):
+            raise GitSafetyError("task workspace belongs to another repository")
+        if Path(self._git_text(["rev-parse", "--show-toplevel"], cwd=path)) != path:
+            raise GitSafetyError("task workspace is not a worktree root")
+        return self._git_text(["status", "--porcelain=v1", "-z"], cwd=path)
 
     def _workspace(self, task_id: str) -> TaskWorkspace:
         try:
