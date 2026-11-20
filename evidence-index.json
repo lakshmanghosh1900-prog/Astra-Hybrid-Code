@@ -1,0 +1,232 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_type": "ASTRA_CODER_STAGE05B_EVIDENCE_INDEX",
+  "stage": "05b",
+  "source_commit": "088fd9e70500da9e4d49a01707f0de0d1dc6c958",
+  "baseline_commit": "00807102f074db4f96a1fd01f4594dbe58e48b0d",
+  "generated_on": "2026-11-21",
+  "schema_validation": "UNAVAILABLE - no authoritative repository schema exists for R4; JSON syntax validated only",
+  "self_reference_note": "No R8 reference inside this index; R8 records this file's hash externally. Circular R4/R8 references intentionally excluded.",
+  "items": [
+    {
+      "path": "authorization.json",
+      "type": "artifact",
+      "source_commit": "088fd9e70500da9e4d49a01707f0de0d1dc6c958",
+      "sha256": "0e6e6b0296d6120511bf89e3cc0b7261134969df754471921e6b55fbd7f22eed",
+      "command_or_report": "SHA-256 matches protected expectation 0E6E6B0296D6120511BF89E3CC0B7261134969DF754471921E6B55FBD7F22EED; signature structurally present; operational signature verification NOT RUN",
+      "timestamp": "2026-11-21",
+      "scope": "stage05b",
+      "verification_status": "PARTIAL",
+      "reviewer_status": "UNREVIEWED"
+    },
+    {
+      "path": "license-check.json",
+      "type": "artifact",
+      "source_commit": "088fd9e70500da9e4d49a01707f0de0d1dc6c958",
+      "sha256": "863dc2698950a1bd4a4cbde24f29bb92253222dc863febd2bf004c284625708d",
+      "command_or_report": "SHA-256 verified against rea-input-manifest.json license_reference; license gate execution NOT RUN",
+      "timestamp": "2026-11-21",
+      "scope": "stage05b",
+      "verification_status": "PARTIAL",
+      "reviewer_status": "UNREVIEWED"
+    },
+    {
+      "path": "rea-input-manifest.json",
+      "type": "artifact",
+      "source_commit": "088fd9e70500da9e4d49a01707f0de0d1dc6c958",
+      "sha256": "a1ff8bd8814970132d5a82ca1684d9f3f8efb5aca08a6d9bc548e3a392669106",
+      "command_or_report": "SHA-256 computed on current tree; R3 gate execution NOT RUN",
+      "timestamp": "2026-11-21",
+      "scope": "stage05b",
+      "verification_status": "PARTIAL",
+      "reviewer_status": "UNREVIEWED"
+    },
+    {
+      "path": "docs/schemas/authorization.schema.json",
+      "type": "schema",
+      "source_commit": "088fd9e70500da9e4d49a01707f0de0d1dc6c958",
+      "sha256": "a90dd9815eeb49be6c2cfe435dc7e59df32048879425f46946b168ff16337bfe",
+      "command_or_report": "File hash verified; existing authoritative R1 schema (not an R4-R8 schema)",
+      "timestamp": "2026-11-21",
+      "scope": "stage05b",
+      "verification_status": "VERIFIED",
+      "reviewer_status": "UNREVIEWED"
+    },
+    {
+      "path": "docs/schemas/authorization-log.schema.json",
+      "type": "schema",
+      "source_commit": "088fd9e70500da9e4d49a01707f0de0d1dc6c958",
+      "sha256": "ebb81bfd831b7fb34352cb3be7bd6f58274306e37f34adb2eada95dbd5fae3c0",
+      "command_or_report": "File hash verified; existing audit-log schema (not an R4-R8 schema)",
+      "timestamp": "2026-11-21",
+      "scope": "stage05b",
+      "verification_status": "VERIFIED",
+      "reviewer_status": "UNREVIEWED"
+    },
+    {
+      "path": "docs/schemas/execution-receipt.schema.json",
+      "type": "schema",
+      "source_commit": "088fd9e70500da9e4d49a01707f0de0d1dc6c958",
+      "sha256": "3f2d088cad03dd791aea5a7e1e73a40861b47422602808865219d0ec1961ff4d",
+      "command_or_report": "File hash verified; existing receipt schema (not an R4-R8 schema)",
+      "timestamp": "2026-11-21",
+      "scope": "stage05b",
+      "verification_status": "VERIFIED",
+      "reviewer_status": "UNREVIEWED"
+    },
+    {
+      "path": "docs/schemas/license-check.schema.json",
+      "type": "schema",
+      "source_commit": "088fd9e70500da9e4d49a01707f0de0d1dc6c958",
+      "sha256": "46751ac8df03d813cf40fb5fc09e16931c8a0adae828ccb3e2b37b3be11ca4e1",
+      "command_or_report": "File hash verified; existing R2 schema (not an R4-R8 schema)",
+      "timestamp": "2026-11-21",
+      "scope": "stage05b",
+      "verification_status": "VERIFIED",
+      "reviewer_status": "UNREVIEWED"
+    },
+    {
+      "path": "docs/schemas/rea-input-manifest.schema.json",
+      "type": "schema",
+      "source_commit": "088fd9e70500da9e4d49a01707f0de0d1dc6c958",
+      "sha256": "9010988beffde27edbc0edbd40e3e1eed258ffd385e0a871b0642a562a4ebec5",
+      "command_or_report": "File hash verified; existing R3 schema (not an R4-R8 schema)",
+      "timestamp": "2026-11-21",
+      "scope": "stage05b",
+      "verification_status": "VERIFIED",
+      "reviewer_status": "UNREVIEWED"
+    },
+    {
+      "path": "reports/worker-smoke.json",
+      "type": "artifact",
+      "source_commit": "088fd9e70500da9e4d49a01707f0de0d1dc6c958",
+      "sha256": "3045c669207d0addcdf117ea37b6cbf82e595c67fa6aaad018b3b6645326d5d8",
+      "command_or_report": "Protected hash verified before and after work: 3045C669207D0ADDCDF117EA37B6CBF82E595C67FA6AAAD018B3B6645326D5D8",
+      "timestamp": "2026-11-21",
+      "scope": "repo",
+      "verification_status": "VERIFIED",
+      "reviewer_status": "UNREVIEWED"
+    },
+    {
+      "path": "reports/stage05b-section4-evidence.md",
+      "type": "report",
+      "source_commit": "00807102f074db4f96a1fd01f4594dbe58e48b0d",
+      "sha256": "42d37b8b882700f4ffaa7acea9673c0a48bb11e09a777e0eb8dd3c982cc04b25",
+      "command_or_report": "reports/stage05b-section4-evidence.md - documented Section 4 evidence on clean baseline checkout; NOT re-run in this task",
+      "timestamp": "2026-11-21",
+      "scope": "section4",
+      "verification_status": "PARTIAL",
+      "reviewer_status": "UNREVIEWED"
+    },
+    {
+      "path": "reports/stage05b-security-hardening-report.md",
+      "type": "report",
+      "source_commit": "00807102f074db4f96a1fd01f4594dbe58e48b0d",
+      "sha256": "c0a78fe71565a7dd8d393ccf2a3f6c522fd17a75f797105e27bd0c08d4b9874e",
+      "command_or_report": "reports/stage05b-security-hardening-report.md - implementer-authored hardening evidence and self-review",
+      "timestamp": "2026-11-21",
+      "scope": "stage05b",
+      "verification_status": "PARTIAL",
+      "reviewer_status": "SELF_REVIEWED"
+    },
+    {
+      "path": "reports/stage05b-closure-report.md",
+      "type": "report",
+      "source_commit": "00807102f074db4f96a1fd01f4594dbe58e48b0d",
+      "sha256": "0cae9fde3a6ca5cd70ff58bfd33279d3808a358c3fabc31731d899f55e9c8da2",
+      "command_or_report": "reports/stage05b-closure-report.md - status PARTIAL, NOT CERTIFIED; human closure pending",
+      "timestamp": "2026-11-21",
+      "scope": "stage05b",
+      "verification_status": "PARTIAL",
+      "reviewer_status": "SELF_REVIEWED"
+    },
+    {
+      "path": "reports/stage05b-signer-risk-acceptance.md",
+      "type": "report",
+      "source_commit": "00807102f074db4f96a1fd01f4594dbe58e48b0d",
+      "sha256": "32730e958c83163d539c396e3dc596d2a576290cf3394d252eccfafad144f2a8",
+      "command_or_report": "reports/stage05b-signer-risk-acceptance.md - documented human risk acceptance, not a cryptographic fix",
+      "timestamp": "2026-11-21",
+      "scope": "stage05b",
+      "verification_status": "PARTIAL",
+      "reviewer_status": "UNREVIEWED"
+    },
+    {
+      "path": "reports/stage05b-entrypoint-ratification.md",
+      "type": "report",
+      "source_commit": "00807102f074db4f96a1fd01f4594dbe58e48b0d",
+      "sha256": "1e8f0e5dcfeafb85dc2068fa7adb003937744f19c1869a04e5a305276ed1db1a",
+      "command_or_report": "reports/stage05b-entrypoint-ratification.md - documentation-only ratification of thin entry-point calls",
+      "timestamp": "2026-11-21",
+      "scope": "stage05b",
+      "verification_status": "PARTIAL",
+      "reviewer_status": "UNREVIEWED"
+    },
+    {
+      "path": "reports/stage05b-scope-binding-fix.md",
+      "type": "report",
+      "source_commit": "088fd9e70500da9e4d49a01707f0de0d1dc6c958",
+      "sha256": "fe173a2f8c677d44b2355002677242eab226a8d2481398fe3f1ade2face4b5dc",
+      "command_or_report": "reports/stage05b-scope-binding-fix.md - targeted fix evidence (pytest/mypy/Ruff scoped PASS; full-tree Ruff finding documented)",
+      "timestamp": "2026-11-21",
+      "scope": "stage05b",
+      "verification_status": "PARTIAL",
+      "reviewer_status": "UNREVIEWED"
+    },
+    {
+      "path": "reports/stage05b-readonly-audit-findings.md",
+      "type": "report",
+      "source_commit": "00807102f074db4f96a1fd01f4594dbe58e48b0d",
+      "sha256": "d99b10dcfd013acc765bc027d644eb869c020221bcd13a33ff93944494a3f997",
+      "command_or_report": "reports/stage05b-readonly-audit-findings.md - original read-only findings (F-R1/F-R2/F-R3 etc.)",
+      "timestamp": "2026-11-21",
+      "scope": "stage05b",
+      "verification_status": "PARTIAL",
+      "reviewer_status": "SELF_REVIEWED"
+    },
+    {
+      "path": "docs/blueprint/FINAL-BLUEPRINT-AUTONOMOUS.md",
+      "type": "config",
+      "source_commit": "088fd9e70500da9e4d49a01707f0de0d1dc6c958",
+      "sha256": "5760aae7708923e6e54732cfaf41883330a8b3b23373ced33f2742d529526cc3",
+      "command_or_report": "docs/blueprint/FINAL-BLUEPRINT-AUTONOMOUS.md - Stage 05b R1-R8 and Section 4 exit rules (lines 39-57)",
+      "timestamp": "2026-11-21",
+      "scope": "repo",
+      "verification_status": "VERIFIED",
+      "reviewer_status": "UNREVIEWED"
+    },
+    {
+      "path": "scripts/validate_r1_r3.py",
+      "type": "config",
+      "source_commit": "088fd9e70500da9e4d49a01707f0de0d1dc6c958",
+      "sha256": "4471132fc611e76f161affa892600a7891dcbe82a933cb145c8a6c79ae33c0c0",
+      "command_or_report": "python -m ruff check --no-cache scripts/validate_r1_r3.py (exit 0); UTF-8 BOM removed and import groups separated; script logic unchanged",
+      "timestamp": "2026-11-21",
+      "scope": "stage05b",
+      "verification_status": "VERIFIED",
+      "reviewer_status": "UNREVIEWED"
+    },
+    {
+      "path": "ci-run:44767974342",
+      "type": "ci_run",
+      "source_commit": "00807102f074db4f96a1fd01f4594dbe58e48b0d",
+      "sha256": "n/a",
+      "command_or_report": "gh run 44767974342 (pull_request) quality SUCCESS per reports/stage05b-section4-evidence.md:30; NOT re-verified in this task",
+      "timestamp": "2026-11-20",
+      "scope": "section4",
+      "verification_status": "PARTIAL",
+      "reviewer_status": "UNREVIEWED"
+    },
+    {
+      "path": "ci-run:44767963636",
+      "type": "ci_run",
+      "source_commit": "00807102f074db4f96a1fd01f4594dbe58e48b0d",
+      "sha256": "n/a",
+      "command_or_report": "gh run 44767963636 (push) quality SUCCESS per reports/stage05b-section4-evidence.md:31; NOT re-verified in this task",
+      "timestamp": "2026-11-20",
+      "scope": "section4",
+      "verification_status": "PARTIAL",
+      "reviewer_status": "UNREVIEWED"
+    }
+  ]
+}

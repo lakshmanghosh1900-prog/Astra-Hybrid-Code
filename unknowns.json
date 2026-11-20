@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0.0",
+  "artifact_type": "ASTRA_CODER_STAGE05B_UNKNOWNS",
+  "stage": "05b",
+  "source_commit": "088fd9e70500da9e4d49a01707f0de0d1dc6c958",
+  "generated_on": "2026-11-21",
+  "schema_validation": "UNAVAILABLE - no authoritative repository schema exists for R6; JSON syntax validated only",
+  "unknowns": [
+    {
+      "id": "UNK-05B-01",
+      "description": "Signer-to-human identity binding is not proven: rbac.py compares the signing key ID with human principal IDs across different namespaces.",
+      "affected_gate_or_artifact": "R7; src/astra_coder/rea/rbac.py:117-135",
+      "available_evidence": "reports/stage05b-signer-risk-acceptance.md records human risk acceptance by Lakshman Ghosh on 2026-11-21; reports/stage05b-security-hardening-report.md Section 10 limitation 1",
+      "impact": "The gate cannot cryptographically prove that the key which signed authorization.json is the same identity recorded as the trusted human approver; denial paths remain fail-closed.",
+      "blocking": false,
+      "owner_or_decision": "Lakshman Ghosh (risk accepted, implementation deferred until an authenticated identity system exists)",
+      "resolution_condition": "Implement cryptographic signer-to-human binding with a dedicated test once an authenticated identity authority is available in the repository."
+    },
+    {
+      "id": "UNK-05B-02",
+      "description": "Operational contents of external trusted-key and trusted-approver registries are NOT VERIFIED.",
+      "affected_gate_or_artifact": "R1/R7; src/astra_coder/rea/trust.py:25-26,65-193; src/astra_coder/rea/gate.py:301-309",
+      "available_evidence": "Registry locations are referenced by ASTRA_REA_TRUSTED_KEYS_PATH and ASTRA_REA_APPROVER_REGISTRY_PATH; no registry file was read in this task.",
+      "impact": "Active key IDs, validity windows, approver status, allowed_actions, and authorization/artifact/bundle bindings are NOT VERIFIED; gate execution was not run.",
+      "blocking": true,
+      "owner_or_decision": "PENDING - human operator / closure approver",
+      "resolution_condition": "Operator verifies registry contents and records independent confirmation; operational gate verification must be separately authorized and run."
+    },
+    {
+      "id": "UNK-05B-03",
+      "description": "Operational Ed25519 verification of the top-level authorization signature was NOT RUN.",
+      "affected_gate_or_artifact": "R1; src/astra_coder/rea/gate.py:161-202",
+      "available_evidence": "authorization.json:47-50 carries key_id key-05b-prod-01 and a base64 value decoding to 64 bytes; SHA-256 of the file matches the protected expectation.",
+      "impact": "Signature validity against the trusted public key is NOT VERIFIED; structural presence is not cryptographic proof.",
+      "blocking": true,
+      "owner_or_decision": "PENDING - authorized verifier",
+      "resolution_condition": "Run gate signature verification with the external trusted-key registry under a separately authorized verification task."
+    },
+    {
+      "id": "UNK-05B-04",
+      "description": "Independent security review disposition and explicit human closure approval are not recorded as approved in the repository.",
+      "affected_gate_or_artifact": "R7/R8; Stage 05b closure",
+      "available_evidence": "reports/stage05b-section4-evidence.md:38 and reports/stage05b-entrypoint-ratification.md:39-40 state independent security review and human closure approval remain PENDING.",
+      "impact": "Stage 05b remains NOT CERTIFIED; closure cannot be claimed.",
+      "blocking": true,
+      "owner_or_decision": "PENDING - independent reviewer and human closure approver",
+      "resolution_condition": "Record an independent review disposition and an explicit human closure approval artifact; only then may closure be evaluated."
+    },
+    {
+      "id": "UNK-05B-05",
+      "description": "Only targeted checks were run in this task; full Section 4 PASS was not re-verified.",
+      "affected_gate_or_artifact": "R8; docs/blueprint/FINAL-BLUEPRINT-AUTONOMOUS.md:39-49",
+      "available_evidence": "Historical Section 4 evidence exists at reports/stage05b-section4-evidence.md for baseline 0080710; this task ran only the explicitly authorized targeted checks.",
+      "impact": "Full Section 4 PASS is NOT CLAIMED for the current tree 088fd9e.",
+      "blocking": true,
+      "owner_or_decision": "PENDING - authorized verifier",
+      "resolution_condition": "Re-run the complete Section 4 checklist on the final tree under a separately authorized verification task and record results."
+    },
+    {
+      "id": "UNK-05B-06",
+      "description": "No authoritative repository schema exists for the R4-R8 artifacts.",
+      "affected_gate_or_artifact": "R4/R5/R6/R7/R8",
+      "available_evidence": "docs/schemas/ contains only R1/R2/R3, authorization-log, and execution-receipt schemas; approved Section F structures were supplied in the task prompt, not as a repository schema file.",
+      "impact": "Generated JSON artifacts can be syntax-validated but cannot be validated against an authoritative schema; a proposed structure must not be represented as an approved repository schema.",
+      "blocking": false,
+      "owner_or_decision": "PENDING - schema owner / principal",
+      "resolution_condition": "Add an approved schema file to docs/schemas/ under a separate authorized change, then validate R4-R8 against it."
+    }
+  ]
+}
