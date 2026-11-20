@@ -24,6 +24,7 @@ dashboard/out/
 
 # Local build artifacts
 *.tsbuildinfo
+*.db
 *.db-*
 *.bak
 *.egg-info/
@@ -36,6 +37,7 @@ gitleaks-artifact/
 coverage.json
 coverage.xml
 gitleaks-findings.json
+.coverage
 coverage.log
 .astra-keys/
 
