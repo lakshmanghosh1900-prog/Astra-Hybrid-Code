@@ -65,10 +65,17 @@ class VerificationSummary(BaseModel):
     workspace: str
     gates: tuple[GateResult, ...]
     evidence_hash: str
+    required_gates: tuple[GateName, ...] = tuple(GateName)
 
     @property
     def passed(self) -> bool:
-        return bool(self.gates) and all(gate.status is GateStatus.PASSED for gate in self.gates)
+        required = set(self.required_gates)
+        return (
+            bool(required)
+            and len(self.gates) == len(required) == len(self.required_gates)
+            and {gate.name for gate in self.gates} == required
+            and all(gate.status is GateStatus.PASSED for gate in self.gates)
+        )
 
     @property
     def failed_or_unavailable(self) -> tuple[GateResult, ...]:
@@ -171,14 +178,23 @@ class VerificationEngine:
                 )
             )
         overall = self._hash([result.model_dump(mode="json") for result in results])
-        return VerificationSummary(workspace=str(root), gates=tuple(results), evidence_hash=overall)
+        return VerificationSummary(
+            workspace=str(root),
+            gates=tuple(results),
+            evidence_hash=overall,
+            required_gates=tuple(spec.name for spec in self.gates),
+        )
 
     def require_success(self, summary: VerificationSummary) -> None:
+        if set(summary.required_gates) != {spec.name for spec in self.gates}:
+            raise VerificationIncomplete("verification profile does not match required gates")
         if not summary.passed:
             detail = ", ".join(
                 f"{gate.name}={gate.status}" for gate in summary.failed_or_unavailable
             )
-            raise VerificationIncomplete(f"verification did not pass: {detail}")
+            raise VerificationIncomplete(
+                f"verification did not pass: {detail or 'incomplete gate results'}"
+            )
 
     @staticmethod
     def _status(process: ProcessResult) -> GateStatus:

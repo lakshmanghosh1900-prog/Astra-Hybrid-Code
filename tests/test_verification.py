@@ -67,6 +67,25 @@ def test_default_runner_fails_closed(tmp_path: Path) -> None:
     assert all(gate.status is GateStatus.UNAVAILABLE for gate in summary.gates)
 
 
+def test_missing_result_fails_closed(tmp_path: Path) -> None:
+    engine = VerificationEngine(FakeRunner([ProcessResult(exit_code=0) for _ in GateName]))
+    summary = engine.run(tmp_path)
+    partial = summary.model_copy(update={"gates": summary.gates[:-1]})
+    assert not partial.passed
+    with pytest.raises(VerificationIncomplete, match="incomplete gate results"):
+        engine.require_success(partial)
+
+
+def test_explicit_scope_does_not_satisfy_full_profile(tmp_path: Path) -> None:
+    engine = VerificationEngine(FakeRunner([ProcessResult(exit_code=0)]), gates()[:1])
+    summary = engine.run(tmp_path)
+    assert summary.required_gates == (GateName.TESTS,)
+    assert summary.passed
+    engine.require_success(summary)
+    with pytest.raises(VerificationIncomplete, match="profile"):
+        VerificationEngine().require_success(summary)
+
+
 @pytest.mark.parametrize("name", [GateName.SEMGREP, GateName.GITLEAKS])
 def test_failed_scanner_gate_prevents_success(tmp_path: Path, name: GateName) -> None:
     spec = GateSpec(name=name, argv=(name.value,))
