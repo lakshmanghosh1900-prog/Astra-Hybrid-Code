@@ -140,6 +140,12 @@ class GitSafety:
     def status_porcelain(self) -> str:
         return self._git_text(["status", "--porcelain=v1", "-z"])
 
+    def task_status_porcelain(self, task_id: str) -> str:
+        workspace = self._workspace(task_id)
+        if workspace.path.resolve() == self.root:
+            raise GitSafetyError("refusing to read root status as task status")
+        return self._git_text(["status", "--porcelain=v1", "-z"], cwd=workspace.path)
+
     def _workspace(self, task_id: str) -> TaskWorkspace:
         try:
             return self._workspaces[task_id]
