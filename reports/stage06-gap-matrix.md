@@ -14,6 +14,17 @@ Static audit against main `7b4bd9c` on `feat/stage06-integration-audit`. The bra
 | [13 CLI and FastAPI/SSE](../docs/stages/13.md) | Seven CLI commands, typed task/control routes, policy and durable approvals/denials, cursor replay, explicit missing-task errors. | `cli.py` defines the commands. `api.py` uses `TaskService` and exposes cursor filtering via `after`; approvals and denials go through service/persistence. | `test_api_cli.py` covers API submit/approve/cancel/SSE, authentication, missing tasks, persisted approval and CLI doctor. | 13-A: CLI smoke evidence is limited to doctor; direct denial and cursor-resume coverage not established by this audit. | Low | Verify or add targeted assertions for denial and resume after approval. |
 | [14 Dashboard](../docs/stages/14.md) | FastAPI-backed UI for tasks, approvals, events, diff, costs and UI states, with component tests, lint/build and dependency evidence. | Frontend lives in `dashboard/`, outside the Python package; `api.py` supplies backend routes. Dashboard component and client files exist. Package metadata pins Next 15.5.28; the doc already distinguishes the original Next 14 milestone. | `dashboard/tests/components.test.tsx`, `api.test.ts` and `auth.test.ts` exist. Historical test/build/audit evidence was not refreshed. | 14-A: Current build, lint and dependency status remain unverified in this audit. | Evidence blocker | Preserve historical qualifications; re-verification requires separate approval. |
 
-No fixes or runtime actions were performed. Stage 07 orchestrator wiring, Worker/REA execution, signing, deployment, release and certification remain outside scope.
+The discovery pass ran no tests or runtime actions. Stage 07 orchestrator wiring, Worker/REA execution, signing, deployment, release and certification remain outside scope.
 
-HOLD - GAP MATRIX READY, AWAITING HUMAN APPROVAL FOR FIXES
+Phase 2, 06-A investigation: The editor shares one mesh across the steps in
+one apply call. The worker factory creates a DockerToolMesh for each apply;
+each helper invocation creates its own local ToolMesh. The local lock serializes
+writes through one instance only. Independent instances operating on the same
+workspace are outside that lock, including separate helper invocations. No
+locking, caller wiring, or test change was made for this finding.
+
+08-A adds worktree status to GitSafety. The existing TaskService diff endpoint
+still reports legacy root status; connecting it to the worker's live worktree
+would require a separate lifecycle and API change.
+
+07-A and 14-A remain evidence blockers; no live Docker or dashboard checks ran.
