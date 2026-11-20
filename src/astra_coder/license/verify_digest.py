@@ -6,10 +6,16 @@ import hashlib
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
 DigestStatus = Literal["VERIFIED", "MISMATCH", "UNVERIFIED"]
-_HEX64_RE = re.compile(r"^[a-f0-9]{64}$")
+_HEX64_RE = re.compile(r"^[0-9a-f]{64}$")
+
+
+def parse_sha256_hex(value: Any) -> str | None:
+    if isinstance(value, str) and _HEX64_RE.fullmatch(value):
+        return value
+    return None
 
 
 @dataclass(frozen=True)
@@ -32,10 +38,7 @@ def verify_sha256_digest(
     expected_sha256: str | None,
 ) -> DigestVerificationResult:
     """Verify content SHA-256 digest against expected lowercase 64-hex digest."""
-    if isinstance(expected_sha256, str):
-        normalized_expected = expected_sha256.strip().lower()
-    else:
-        normalized_expected = None
+    normalized_expected = parse_sha256_hex(expected_sha256)
 
     if isinstance(content, Path):
         try:

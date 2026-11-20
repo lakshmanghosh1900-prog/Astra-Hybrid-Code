@@ -2,11 +2,14 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://astracoder.local/schemas/authorization-log.schema.json",
   "title": "authorization-log",
-  "description": "Proposed template-derived contract. Not proof of authorization, compliance, or evidence validity. Hash chain (event_sha256 over previous_event_hash) must be verified by an external verifier. Schema cannot prove chain integrity.",
+  "description": "Proposed template-derived contract. Not proof of authorization, compliance, or evidence validity. Hash chain (event_sha256 over previous_event_hash) must be verified by an external verifier. Schema cannot prove chain integrity. Records with schema_version 1.0.0 are verify-only; appending requires 1.1.0.",
   "type": "object",
   "properties": {
     "schema_version": {
-      "const": "1.0.0"
+      "enum": [
+        "1.0.0",
+        "1.1.0"
+      ]
     },
     "artifact_type": {
       "const": "ASTRA_CODER_AUTHORIZATION_AUDIT_LOG"
@@ -78,7 +81,7 @@
             "oneOf": [
               {
                 "type": "string",
-                "pattern": "^[a-fA-F0-9]{64}$"
+                "pattern": "^[0-9a-f]{64}$"
               },
               {
                 "type": "null"
@@ -89,12 +92,24 @@
             "oneOf": [
               {
                 "type": "string",
-                "pattern": "^[a-fA-F0-9]{64}$"
+                "pattern": "^[0-9a-f]{64}$"
               },
               {
                 "type": "null"
               }
             ]
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "idempotency_key": {
+            "type": "string",
+            "minLength": 1
+          },
+          "operation_id": {
+            "type": "string",
+            "minLength": 1
           }
         },
         "required": [
@@ -108,7 +123,10 @@
           "decision",
           "evidence_reference",
           "previous_event_hash",
-          "event_sha256"
+          "event_sha256",
+          "sequence",
+          "idempotency_key",
+          "operation_id"
         ],
         "additionalProperties": false
       }
