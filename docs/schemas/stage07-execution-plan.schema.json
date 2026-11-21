@@ -1,0 +1,104 @@
+{
+  "$defs": {
+    "Step": {
+      "additionalProperties": false,
+      "properties": {
+        "step_id": {
+          "minLength": 1,
+          "title": "Step Id",
+          "type": "string"
+        },
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "target_path": {
+          "minLength": 1,
+          "title": "Target Path",
+          "type": "string"
+        },
+        "verification_commands": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Verification Commands",
+          "type": "array"
+        }
+      },
+      "required": [
+        "step_id",
+        "description",
+        "target_path"
+      ],
+      "title": "Step",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "plan_id": {
+      "minLength": 1,
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "role": {
+      "const": "GPT_BRAINING_PLANNER",
+      "title": "Role",
+      "type": "string"
+    },
+    "read_only": {
+      "const": true,
+      "title": "Read Only",
+      "type": "boolean"
+    },
+    "requires_rea_gate": {
+      "const": true,
+      "title": "Requires Rea Gate",
+      "type": "boolean"
+    },
+    "risk_checks": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Risk Checks",
+      "type": "array"
+    },
+    "allowed_target_paths": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Allowed Target Paths",
+      "type": "array"
+    },
+    "excluded_paths": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Excluded Paths",
+      "type": "array"
+    },
+    "steps": {
+      "items": {
+        "$ref": "#/$defs/Step"
+      },
+      "minItems": 1,
+      "title": "Steps",
+      "type": "array"
+    }
+  },
+  "required": [
+    "plan_id",
+    "role",
+    "read_only",
+    "requires_rea_gate",
+    "risk_checks",
+    "allowed_target_paths",
+    "excluded_paths",
+    "steps"
+  ],
+  "title": "ExecutionPlan",
+  "type": "object"
+}
