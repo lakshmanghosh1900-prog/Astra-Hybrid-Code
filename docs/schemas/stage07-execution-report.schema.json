@@ -1,0 +1,28 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "authorization_id": {
+      "title": "Authorization Id",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "COMPLETED",
+        "SKIPPED_NO_SANDBOX"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "target_sha256": {
+      "title": "Target Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "authorization_id",
+    "status",
+    "target_sha256"
+  ],
+  "title": "EnterpriseReport",
+  "type": "object"
+}

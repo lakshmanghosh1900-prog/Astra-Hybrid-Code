@@ -1,6 +1,50 @@
-# Stage 07 Phase 1: hybrid planning contract and bounded REA patch executor
+# Stage 07 Phase 2: enterprise hybrid wiring
 
-**STAGE 07 PHASE 1 — PARTIAL IMPLEMENTATION / NOT CERTIFIED**
+**STAGE 07 PHASE 2 â€” IMPLEMENTED / PENDING INDEPENDENT REVIEW (NOT CERTIFIED)**
+
+Phase 2 extends the merged Phase 1 contract with real role-to-provider routing,
+existing gateway/budget/network policy integration, external human-key approval
+binding, a governed runner, lifecycle receipts, and Docker-only verification.
+Phase 1 behavior remains the bounded patch authority.
+
+## Provider routing and gateway boundary
+
+`HybridProviderRouter` maps `GPT_BRAINING_PLANNER`, `CODEX_CODER`, and
+`CLAUDE_CODER` to separately configured HTTPS OpenAI-compatible endpoints and
+models. Missing model, endpoint, credential, paid-remote authorization, invalid
+endpoint credentials, or cross-role output fails closed before network I/O.
+There is no cross-role fallback. Model labels are checked as response metadata,
+not trusted principals. Native Anthropic Messages transport is deferred until a
+compatible provider is configured.
+
+Every call uses the existing `ModelGateway` and `BudgetRunner`, including
+`NetworkAuthorizer`, `PolicyEngine` remote approvals, worst-case token/cost
+preflight, usage charging, wall-clock deadline, circuit breaker and bounded
+server-error retry. Authentication, authorization, rate-limit and parse failures
+are non-retryable. `SecretRedactor` covers configured values and provider audit
+metadata. Provider credentials come only from environment-loaded Settings.
+
+## Authenticated approval store
+
+`ApprovalEnvelope` is signed by an Ed25519 key. The human-provisioned external
+registry field `approval_signing_key_ids` maps `approver_id` to authorized key IDs;
+missing, duplicate, or multi-owner mappings fail closed. Verification requires a
+valid signature, active key and approver, expiry, authorization ID, exact plan and
+patch digests, exact target path, executor separation, existing REA trust binding,
+and an external single-use nonce journal. No string-ID equality infers ownership.
+The journal is locked, fsynced and never stored in the repository.
+
+## Governed runner and verification
+
+`HybridEnterpriseRunner` coordinates planner output, human approval, coder output,
+REA/RBAC execution, atomic replacement, and lifecycle events. Verification is
+validated with `RunCommandInput` and sent only through `DockerSandbox`; the host
+never runs a raw command. Without Docker, status is `SKIPPED_NO_SANDBOX`; it is
+never reported as completed. Completion/failure receipts and rollback are emitted
+through the existing hash-chain writer. Crash recovery and an authoritative
+cross-process store remain host responsibilities.
+
+**STAGE 07 PHASE 1 â€” PARTIAL IMPLEMENTATION / NOT CERTIFIED**
 
 ## Purpose and architecture reused
 Phase 1 validates planner/coder data and applies bounded single-file text patches.
@@ -104,3 +148,58 @@ Real GPT/Claude/Codex transports/routing, ModelGateway/free-cascade network/budg
 deadline integration, authenticated approval store, full application entry point,
 verification runner, production credentials and deployment are deferred. No claim
 of live providers, certification, Stage 07 closure, push or merge authorization.
+
+## Phase 2 configuration and operational limits
+
+Use load_settings() with ASTRA_PLANNER_MODEL, ASTRA_CODEX_MODEL,
+ASTRA_CLAUDE_MODEL, ASTRA_OPENAI_BASE_URL, ASTRA_OPENAI_API_KEY,
+ASTRA_CLAUDE_BASE_URL, ASTRA_CLAUDE_API_KEY and ASTRA_ALLOW_PAID_REMOTE.
+For T4, ASTRA_ALLOW_REMOTE_T4 and existing task-specific policy approvals are also
+required. No endpoint/model/pricing is guessed. The host supplies conservative
+positive per-token rates via HybridRoutingPolicy; native Anthropic Messages is
+not implemented. Claude requires an approved compatible endpoint. No live model
+or provider identity was verified in this task; real HTTP transports were tested
+with httpx.MockTransport only. Provider metadata never confers RBAC permissions.
+The router is per-task, single-writer; injected clients are trusted host objects.
+HTTP timeouts recompute the remaining task budget on every retry. Late responses
+are charged and then rejected. Existing accounting cannot establish billing for
+failed server requests without usage reports; host billing reconciliation remains
+required. No aggregate cost reservation across concurrent routers is claimed.
+
+The human-provisioned approver record adds approval_signing_key_ids: a nonempty
+unique list of key IDs that also exist in the unchanged trusted-key registry.
+One key must have one human owner. Signature payload is sorted compact JSON of
+ApprovalEnvelope.model_dump(mode='json') excluding signature_base64. Host must
+protect registry and replay journal paths/permissions and prevent journal rollback.
+The journal must be provisioned as [] externally; missing/corrupt journals deny.
+The runner consumes authorization ID and nonce once; retries after mutation or
+failure require human reconciliation, never automatic reauthorization.
+
+Approval binds the exact diff digest. A new proposal must therefore be generated
+and independently reviewed first; the runner accepts a pre-approved exact diff
+and rejects a coder regeneration that differs. There is no automatic approval
+callback and no model can approve its own output. The signed Stage 05b R1/R3 bundle
+must be provisioned externally and match the approved plan/diff. Protected shipped
+repository R1 is never rewritten; tests use isolated workspace copies only.
+
+Verification argv is trusted host input validated by RunCommandInput and
+SandboxToolCall, never taken as a shell string from provider text. The sandbox
+mount is read-only, with network disabled; test/cache writes may need suitable
+container configuration. Existing NoHostExecutor remains unchanged. Missing
+sandbox yields SKIPPED_NO_SANDBOX and an execution-failed lifecycle event, not a
+verified success. Live Docker execution could not be performed: Docker was absent
+on PATH and at the standard Docker Desktop executable path in this session.
+
+Atomic replacement preserves source mode and flushes bytes before os.replace.
+The enterprise wrapper rolls back target bytes when post-apply audit or verification
+fails and attempts a terminal failure receipt. Failed rollback or audit raises;
+no success is returned. Power loss between journal, mutation and receipts is not a
+cross-file transaction: durable consumed authorization plus intent requires manual
+crash reconciliation. Same workspace must use one protected journal/log pair.
+No protection against privileged host writers, registry rollback or hard-link
+aliases is claimed. No second REA/RBAC authority or OS sandbox on host is introduced.
+
+Run tests/unit/test_stage07_enterprise.py in addition to the Phase 1 commands.
+JSON schemas cover approvals and reports. Independent second-party review and
+human sign-off remain pending. The six preview keys remain SECURITY HOLD; no
+push, merge, deployment or certification is authorized by this implementation.

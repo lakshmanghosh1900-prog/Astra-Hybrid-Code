@@ -42,6 +42,11 @@ class Settings:
     ollama_base_url: str = DEFAULT_OLLAMA_BASE_URL
     openai_base_url: str | None = None
     openai_api_key: str | None = field(default=None, repr=False)
+    planner_model: str | None = None
+    codex_model: str | None = None
+    claude_model: str | None = None
+    claude_base_url: str | None = None
+    claude_api_key: str | None = field(default=None, repr=False)
     nvidia_base_url: str = DEFAULT_NVIDIA_BASE_URL
     nvidia_api_key: str | None = field(default=None, repr=False)
     openrouter_base_url: str = DEFAULT_OPENROUTER_BASE_URL
@@ -65,6 +70,7 @@ class Settings:
         """Return configured credential values for redaction, never for logging."""
         values = (
             self.openai_api_key,
+            self.claude_api_key,
             self.nvidia_api_key,
             self.openrouter_api_key,
             self.groq_api_key,
@@ -147,6 +153,11 @@ def load_settings(environ: dict[str, str] | None = None) -> Settings:
         ollama_base_url=values.get("ASTRA_OLLAMA_BASE_URL", DEFAULT_OLLAMA_BASE_URL),
         openai_base_url=values.get("ASTRA_OPENAI_BASE_URL"),
         openai_api_key=values.get("ASTRA_OPENAI_API_KEY"),
+        planner_model=values.get("ASTRA_PLANNER_MODEL"),
+        codex_model=values.get("ASTRA_CODEX_MODEL"),
+        claude_model=values.get("ASTRA_CLAUDE_MODEL"),
+        claude_base_url=values.get("ASTRA_CLAUDE_BASE_URL"),
+        claude_api_key=values.get("ASTRA_CLAUDE_API_KEY"),
         nvidia_base_url=values.get("ASTRA_NVIDIA_BASE_URL", DEFAULT_NVIDIA_BASE_URL),
         nvidia_api_key=values.get("ASTRA_NVIDIA_API_KEY"),
         openrouter_base_url=values.get("ASTRA_OPENROUTER_BASE_URL", DEFAULT_OPENROUTER_BASE_URL),

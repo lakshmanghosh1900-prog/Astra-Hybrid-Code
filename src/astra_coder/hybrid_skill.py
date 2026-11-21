@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
+import tempfile
 import uuid
 from pathlib import Path, PureWindowsPath
 from typing import Literal
@@ -69,6 +71,21 @@ def plan_digest(plan: ExecutionPlan) -> str:
     return hashlib.sha256(
         json.dumps(plan.model_dump(), sort_keys=True, separators=(",", ":")).encode()
     ).hexdigest()
+
+
+def atomic_replace(target: Path, content: bytes) -> None:
+    """Same-directory replacement after flushed write; never truncate the target."""
+    fd, name = tempfile.mkstemp(prefix=".stage07-", dir=target.parent)
+    temp = Path(name)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            stream.write(content)
+            stream.flush()
+            os.fsync(stream.fileno())
+        temp.chmod(target.stat().st_mode)
+        os.replace(temp, target)
+    finally:
+        temp.unlink(missing_ok=True)
 
 
 def execution_bundle_digest(plan: ExecutionPlan, request: PatchRequest) -> str:
@@ -259,7 +276,7 @@ def _execute_patch_locked(
     )
     if contained(root, name) != target or target.read_bytes() != original:
         raise ValueError("target changed during authorization")
-    target.write_bytes(updated)
+    atomic_replace(target, updated)
 
 
 def execute_patch(
