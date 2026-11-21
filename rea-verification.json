@@ -1,83 +1,92 @@
 {
-  "schema_version": "1.0.0",
-  "artifact_type": "ASTRA_CODER_STAGE05B_VERIFICATION",
-  "stage": "05b",
-  "source_commit": "a2a3b875d62479f0909f9c74a82e265fdbba96a3",
-  "baseline_commit": "00807102f074db4f96a1fd01f4594dbe58e48b0d",
-  "generated_on": "2026-11-21",
-  "schema_validation": "UNAVAILABLE - no authoritative repository schema exists for R8; JSON syntax validated only",
-  "artifact_hashes": {
-    "R1_authorization.json": "0e6e6b0296d6120511bf89e3cc0b7261134969df754471921e6b55fbd7f22eed",
-    "R2_license-check.json": "863dc2698950a1bd4a4cbde24f29bb92253222dc863febd2bf004c284625708d",
-    "R3_rea-input-manifest.json": "a1ff8bd8814970132d5a82ca1684d9f3f8efb5aca08a6d9bc548e3a392669106",
-    "R4_evidence-index.json": "194c1b61e957ae761b4ebbb98752f92c660729a405d7b8d6a4fdf18fd35dbc46",
-    "R5_spec.md": "740a37877b2a47e30be969a6c6192c7bfc491dd01d8e7c9b684a58fa3f9c9896",
-    "R6_unknowns.json": "2bd935167c228aecb5500c061ebbf641530ac1d36976c5f4a92a0e7b0f996e0b",
-    "R7_rea-policy-review.json": "6b6b7bc2d74a4f7d6ebb7fd1807b6282e5dc9d5d75bbb567afb0ea50388fa15d"
-  },
-  "self_reference_policy": "R8 SHA-256 is intentionally NOT recorded inside R8; it must be computed externally after finalization.",
-  "circular_reference_policy": "R4 contains no reference to R8. R8 references R4 by hash only. No circular R4/R8 hash references.",
-  "pytest_result": {
-    "command": "python -B -m pytest -p no:cacheprovider --override-ini 'addopts=--strict-markers' -q",
-    "exit_code": 0,
-    "passed": 491,
-    "failed": 0,
-    "skipped": 2,
-    "warnings": 1,
-    "duration_seconds": 23.54,
-    "source": "reports/stage05b-section4-evidence-a2a3b87.md (fresh run on a2a3b87)"
-  },
-  "ruff_result": {
-    "targeted_check_command": "python -B -m ruff check .",
-    "targeted_check_exit_code": 0,
-    "targeted_check_findings": "All checks passed!",
-    "scripts_validate_r1_r3_status": "FIXED - UTF-8 BOM removed and import groups separated; script logic unchanged; Ruff I001 resolved",
-    "full_scope_check": {
-      "command": "python -B -m ruff check .",
-      "exit_code": 0,
-      "findings": "All checks passed!",
-      "source": "reports/stage05b-section4-evidence-a2a3b87.md (fresh run on a2a3b87)"
-    },
-    "format_check": {
-      "command": "python -B -m ruff format --check src tests",
-      "exit_code": 0,
-      "findings": "72 files already formatted",
-      "source": "reports/stage05b-section4-evidence-a2a3b87.md (fresh run on a2a3b87)"
-    }
-  },
-  "mypy_result": {
-    "command": "python -B -m mypy --cache-dir=.../astra-mypy-cache src",
-    "exit_code": 0,
-    "files_checked": 43,
-    "source": "reports/stage05b-section4-evidence-a2a3b87.md (fresh run on a2a3b87)"
-  },
-  "gitleaks_result": {
-    "command": ".tools/gitleaks.exe/gitleaks.exe git --no-banner --verbose",
-    "exit_code": 0,
-    "commits_scanned": 95,
-    "leaks_found": 0,
-    "duration_ms": 430,
-    "suppressions": 2,
-    "suppression_detail": "Finding-level suppressions in .gitleaksignore for reports/d54-dockerfile-verify-20261025.md lines 38 and 117 (pre-existing false positives)",
-    "source": "reports/stage05b-section4-evidence-a2a3b87.md (fresh run on a2a3b87)"
-  },
-  "ci_run_ids": [
-    "44767974342",
-    "44767963636"
-  ],
-  "notes_and_warnings": [
-    "Full Section 4 PASS recorded at a2a3b87: pytest 491 passed, ruff 0, mypy 0, gitleaks 0 leaks.",
-    "Operational gate execution, Worker/REA live execution, Docker, signing, private-key access, deployment, release, and certification: NOT_PERFORMED.",
-    "External trusted-key and trusted-approver registry contents: NOT_VERIFIED; registry files were not read.",
-    "Top-level Ed25519 authorization signature: structurally present, operational verification NOT_RUN.",
-    "Signer-to-human identity binding: GAP documented with human risk acceptance in reports/stage05b-signer-risk-acceptance.md; no cryptographic fix claimed.",
-    "No authoritative schema exists for R4-R8; JSON syntax validation only.",
-    "Protected hashes verified before and after work: reports/worker-smoke.json = 3045C669207D0ADDCDF117EA37B6CBF82E595C67FA6AAAD018B3B6645326D5D8; authorization.json = 0E6E6B0296D6120511BF89E3CC0B7261134969DF754471921E6B55FBD7F22EED.",
-    "Stage 05b: NOT CERTIFIED. Stage 07: NOT AUTHORIZED.",
-    "Baseline distinction: CURRENT_TREE_a2a3b87"
-  ],
-  "baseline_comparison": "Fresh Section 4 evidence recorded at a2a3b87. Historical verification results at 0080710 superseded by this fresh run. Protected files unchanged by hash.",
-  "final_status": "PARTIAL",
-  "independent_reviewer_disposition": "PENDING",
-  "baseline_distinction": "CURRENT_TREE_a2a3b87"
+    "schema_version":  "1.0.0",
+    "artifact_type":  "ASTRA_CODER_STAGE05B_VERIFICATION",
+    "stage":  "05b",
+    "baseline_commit":  "00807102f074db4f96a1fd01f4594dbe58e48b0d",
+    "generated_on":  "2026-11-21",
+    "schema_validation":  "UNAVAILABLE - no authoritative repository schema exists for R8; JSON syntax validated only",
+    "artifact_hashes":  {
+                            "R1_authorization.json":  "57446e110c2f0a6ec9f677c334357486f52bee6b81eab56ab0a9961c01bb72b7",
+                            "R2_license-check.json":  "f557371988cf6c7c8a3e8ec0998da08e631df605611b2b8dbb1eb975e199953d",
+                            "R3_rea-input-manifest.json":  "473e55eae503d3c159bbcbdf603575bd8536563b85a5aa3e7968f04fa8f4c77b",
+                            "R4_evidence-index.json":  "b0ef513ce84c0961c9c739a9fc7fca7cdaafef765d3e586c2a9fb75127a943d2",
+                            "R5_spec.md":  "740a37877b2a47e30be969a6c6192c7bfc491dd01d8e7c9b684a58fa3f9c9896",
+                            "R6_unknowns.json":  "2bd935167c228aecb5500c061ebbf641530ac1d36976c5f4a92a0e7b0f996e0b",
+                            "R7_rea-policy-review.json":  "6b6b7bc2d74a4f7d6ebb7fd1807b6282e5dc9d5d75bbb567afb0ea50388fa15d"
+                        },
+    "self_reference_policy":  "R8 SHA-256 is intentionally NOT recorded inside R8; it must be computed externally after finalization.",
+    "circular_reference_policy":  "R4 contains no reference to R8. R8 references R4 by hash only. No circular R4/R8 hash references.",
+    "pytest_result":  {
+                          "command":  "python -B -m pytest -p no:cacheprovider --override-ini \u0027addopts=--strict-markers\u0027 -q",
+                          "exit_code":  0,
+                          "passed":  491,
+                          "failed":  0,
+                          "skipped":  2,
+                          "warnings":  1,
+                          "duration_seconds":  23.54,
+                          "source":  "reports/stage05b-section4-evidence-a2a3b87.md (fresh run on a2a3b87)"
+                      },
+    "ruff_result":  {
+                        "targeted_check_command":  "python -B -m ruff check .",
+                        "targeted_check_exit_code":  0,
+                        "targeted_check_findings":  "All checks passed!",
+                        "scripts_validate_r1_r3_status":  "FIXED - UTF-8 BOM removed and import groups separated; script logic unchanged; Ruff I001 resolved",
+                        "full_scope_check":  {
+                                                 "command":  "python -B -m ruff check .",
+                                                 "exit_code":  0,
+                                                 "findings":  "All checks passed!",
+                                                 "source":  "reports/stage05b-section4-evidence-a2a3b87.md (fresh run on a2a3b87)"
+                                             },
+                        "format_check":  {
+                                             "command":  "python -B -m ruff format --check src tests",
+                                             "exit_code":  0,
+                                             "findings":  "72 files already formatted",
+                                             "source":  "reports/stage05b-section4-evidence-a2a3b87.md (fresh run on a2a3b87)"
+                                         }
+                    },
+    "mypy_result":  {
+                        "command":  "python -B -m mypy --cache-dir=.../astra-mypy-cache src",
+                        "exit_code":  0,
+                        "files_checked":  43,
+                        "source":  "reports/stage05b-section4-evidence-a2a3b87.md (fresh run on a2a3b87)"
+                    },
+    "gitleaks_result":  {
+                            "command":  ".tools/gitleaks.exe/gitleaks.exe git --no-banner --verbose",
+                            "exit_code":  0,
+                            "commits_scanned":  95,
+                            "leaks_found":  0,
+                            "duration_ms":  430,
+                            "suppressions":  2,
+                            "suppression_detail":  "Finding-level suppressions in .gitleaksignore for reports/d54-dockerfile-verify-20261025.md lines 38 and 117 (pre-existing false positives)",
+                            "source":  "reports/stage05b-section4-evidence-a2a3b87.md (fresh run on a2a3b87)"
+                        },
+    "ci_run_ids":  [
+                       "44767974342",
+                       "44767963636"
+                   ],
+    "notes_and_warnings":  [
+                               "Full Section 4 PASS recorded at a2a3b87: pytest 491 passed, ruff 0, mypy 0, gitleaks 0 leaks.",
+                               "Operational gate execution, Worker/REA live execution, Docker, signing, private-key access, deployment, release, and certification: NOT_PERFORMED.",
+                               "External trusted-key and trusted-approver registry contents: NOT_VERIFIED; registry files were not read.",
+                               "Top-level Ed25519 authorization signature: structurally present, operational verification NOT_RUN.",
+                               "Signer-to-human identity binding: GAP documented with human risk acceptance in reports/stage05b-signer-risk-acceptance.md; no cryptographic fix claimed.",
+                               "No authoritative schema exists for R4-R8; JSON syntax validation only.",
+                               "Legacy Windows CRLF working-tree comparison values only, not canonical blob SHA-256: Protected hashes verified before and after work: reports/worker-smoke.json = 3045C669207D0ADDCDF117EA37B6CBF82E595C67FA6AAAD018B3B6645326D5D8; authorization.json = 0E6E6B0296D6120511BF89E3CC0B7261134969DF754471921E6B55FBD7F22EED.",
+                               "Stage 05b: NOT CERTIFIED. Stage 07: NOT AUTHORIZED.",
+                               "Baseline distinction: CURRENT_TREE_a2a3b87"
+                           ],
+    "baseline_comparison":  "Fresh Section 4 evidence recorded at a2a3b87. Historical verification results at 0080710 superseded by this fresh run. Protected files unchanged by hash.",
+    "final_status":  "PARTIAL",
+    "independent_reviewer_disposition":  "PENDING",
+    "baseline_distinction":  "CURRENT_TREE_a2a3b87",
+    "hash_basis":  "SHA-256 of Git blob bytes, LF as stored in Git, via git cat-file blob HEAD:\u003cpath\u003e. Reproducible independent of checkout autocrlf. Windows working-tree Get-FileHash values differ by CRLF and are legacy comparison only.",
+    "evidence_subject_baseline":  "436c7e6",
+    "evidence_document_revision":  "cff6c7aa8f3a8ccd0aee905aa2092a95f9e68034",
+    "evidence_document_revision_note":  "Exact evidence-content commit recorded by a subsequent metadata commit, avoiding commit self-reference.",
+    "license_file_hashes":  {
+                                "src/astra_coder/license/resolve_reference.py":  "ffc8a16c7d2106a9e4743bee00e5890ef11533abe22bbffb5b61f16e15be3b45",
+                                "src/astra_coder/license/verify_digest.py":  "741f99b83af075fb5aea0de9a03ae9a581bfdc062e0c0db888314a2704921b83",
+                                "src/astra_coder/license/__init__.py":  "a5ff6218b6ac432b2a18f1bd664bfb3d3a55df4d40478bd2d654b45485591d9b",
+                                "src/astra_coder/license/decision.py":  "0aad74244ce5e434692ad5ecc3ce80be4326ddb95b05525b65cafed6cf406d43"
+                            }
 }
