@@ -341,7 +341,7 @@
               ],
     "hash_basis":  "SHA-256 of Git blob bytes, LF as stored in Git, via git cat-file blob HEAD:\u003cpath\u003e. Reproducible independent of checkout autocrlf. Windows working-tree Get-FileHash values differ by CRLF and are legacy comparison only.",
     "evidence_subject_baseline":  "436c7e6",
-    "evidence_document_revision":  "PENDING_COMMIT",
+    "evidence_document_revision":  "cff6c7aa8f3a8ccd0aee905aa2092a95f9e68034",
     "evidence_document_revision_note":  "Exact evidence-content commit recorded by a subsequent metadata commit, avoiding commit self-reference.",
     "final_status":  "PARTIAL",
     "reviewer_status":  "PENDING"

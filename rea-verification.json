@@ -9,7 +9,7 @@
                             "R1_authorization.json":  "57446e110c2f0a6ec9f677c334357486f52bee6b81eab56ab0a9961c01bb72b7",
                             "R2_license-check.json":  "f557371988cf6c7c8a3e8ec0998da08e631df605611b2b8dbb1eb975e199953d",
                             "R3_rea-input-manifest.json":  "473e55eae503d3c159bbcbdf603575bd8536563b85a5aa3e7968f04fa8f4c77b",
-                            "R4_evidence-index.json":  "de95695ab8deff8f543c44164973539187657ac8e150c9a9ec42c26be9810f42",
+                            "R4_evidence-index.json":  "b0ef513ce84c0961c9c739a9fc7fca7cdaafef765d3e586c2a9fb75127a943d2",
                             "R5_spec.md":  "740a37877b2a47e30be969a6c6192c7bfc491dd01d8e7c9b684a58fa3f9c9896",
                             "R6_unknowns.json":  "2bd935167c228aecb5500c061ebbf641530ac1d36976c5f4a92a0e7b0f996e0b",
                             "R7_rea-policy-review.json":  "6b6b7bc2d74a4f7d6ebb7fd1807b6282e5dc9d5d75bbb567afb0ea50388fa15d"
@@ -81,7 +81,7 @@
     "baseline_distinction":  "CURRENT_TREE_a2a3b87",
     "hash_basis":  "SHA-256 of Git blob bytes, LF as stored in Git, via git cat-file blob HEAD:\u003cpath\u003e. Reproducible independent of checkout autocrlf. Windows working-tree Get-FileHash values differ by CRLF and are legacy comparison only.",
     "evidence_subject_baseline":  "436c7e6",
-    "evidence_document_revision":  "PENDING_COMMIT",
+    "evidence_document_revision":  "cff6c7aa8f3a8ccd0aee905aa2092a95f9e68034",
     "evidence_document_revision_note":  "Exact evidence-content commit recorded by a subsequent metadata commit, avoiding commit self-reference.",
     "license_file_hashes":  {
                                 "src/astra_coder/license/resolve_reference.py":  "ffc8a16c7d2106a9e4743bee00e5890ef11533abe22bbffb5b61f16e15be3b45",
