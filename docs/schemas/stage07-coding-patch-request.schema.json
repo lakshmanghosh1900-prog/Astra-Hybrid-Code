@@ -1,0 +1,79 @@
+{
+  "$defs": {
+    "SkillBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "skill": {
+          "const": "rea-hybrid-braining-coding",
+          "title": "Skill",
+          "type": "string"
+        },
+        "gate": {
+          "const": "rea-gate",
+          "title": "Gate",
+          "type": "string"
+        },
+        "fail_closed": {
+          "const": true,
+          "title": "Fail Closed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "skill",
+        "gate",
+        "fail_closed"
+      ],
+      "title": "SkillBinding",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "role": {
+      "enum": [
+        "CLAUDE_CODER",
+        "CODEX_CODER"
+      ],
+      "title": "Role",
+      "type": "string"
+    },
+    "plan_id": {
+      "title": "Plan Id",
+      "type": "string"
+    },
+    "plan_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Plan Sha256",
+      "type": "string"
+    },
+    "step_id": {
+      "title": "Step Id",
+      "type": "string"
+    },
+    "diff_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Diff Sha256",
+      "type": "string"
+    },
+    "diff": {
+      "minLength": 1,
+      "title": "Diff",
+      "type": "string"
+    },
+    "rea_skill_binding": {
+      "$ref": "#/$defs/SkillBinding"
+    }
+  },
+  "required": [
+    "role",
+    "plan_id",
+    "plan_sha256",
+    "step_id",
+    "diff_sha256",
+    "diff",
+    "rea_skill_binding"
+  ],
+  "title": "PatchRequest",
+  "type": "object"
+}
