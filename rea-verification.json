@@ -9,10 +9,10 @@
                             "R1_authorization.json":  "57446e110c2f0a6ec9f677c334357486f52bee6b81eab56ab0a9961c01bb72b7",
                             "R2_license-check.json":  "f557371988cf6c7c8a3e8ec0998da08e631df605611b2b8dbb1eb975e199953d",
                             "R3_rea-input-manifest.json":  "473e55eae503d3c159bbcbdf603575bd8536563b85a5aa3e7968f04fa8f4c77b",
-                            "R4_evidence-index.json":  "b0ef513ce84c0961c9c739a9fc7fca7cdaafef765d3e586c2a9fb75127a943d2",
-                            "R5_spec.md":  "740a37877b2a47e30be969a6c6192c7bfc491dd01d8e7c9b684a58fa3f9c9896",
-                            "R6_unknowns.json":  "2bd935167c228aecb5500c061ebbf641530ac1d36976c5f4a92a0e7b0f996e0b",
-                            "R7_rea-policy-review.json":  "6b6b7bc2d74a4f7d6ebb7fd1807b6282e5dc9d5d75bbb567afb0ea50388fa15d"
+                            "R4_evidence-index.json":  "93b98f80dc5221d04a7896021887bb236c2bd87cf6a859c2e7fa0671a6d2c14a",
+                            "R5_spec.md":  "3ba8839f6fc8eba13b9f55634a5dd325278a8ff6bfd4ebaf342f6a709a9d0191",
+                            "R6_unknowns.json":  "310143fc4d61b5fa613cc3b0b9db988fb884978143baee9a5eb29cd4b557d789",
+                            "R7_rea-policy-review.json":  "6dab9f7ce38d3a73dd9b9ddb834c8bfe12784e95721d3101617d91acf312dbc1"
                         },
     "self_reference_policy":  "R8 SHA-256 is intentionally NOT recorded inside R8; it must be computed externally after finalization.",
     "circular_reference_policy":  "R4 contains no reference to R8. R8 references R4 by hash only. No circular R4/R8 hash references.",

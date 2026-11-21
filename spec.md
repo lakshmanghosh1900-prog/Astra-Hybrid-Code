@@ -89,3 +89,32 @@ silently resolved by this specification.
   `reports/stage05b-signer-risk-acceptance.md`; no cryptographic fix is claimed.
 - Independent security review and explicit human closure approval remain PENDING.
 - Stage 05b remains **NOT CERTIFIED**; Stage 07 remains **NOT AUTHORIZED**.
+
+## 9. Fail-closed hash, input, and registry handling
+
+All hash, input, and registry handling is fail-closed. There is no silent fallback, no implicit
+trust, and no best-effort substitution anywhere in R1-R8:
+
+- **Missing** artifact, field, registry file, required environment reference, or approval record
+  yields an explicit `MISSING`/`NOT_VERIFIED` status or denial. No default value, assumed identity,
+  or skipped check may fill the gap.
+- **Malformed** hash (anything other than strict lowercase 64-hex), malformed JSON, malformed
+  signature or key material, or malformed registry content yields explicit denial. Input is never
+  parsed leniently and an unparseable entry is never ignored.
+- **Ambiguous** input — conflicting hash values, multiple path variants for one artifact, duplicate
+  IDs, conflicting approval scopes, or root/nested field disagreement — yields explicit denial. No
+  first-match or last-match selection is permitted.
+- **Inconsistent** hashes: every recorded canonical Git blob LF SHA-256 must reproduce byte-for-byte
+  from `git cat-file blob <commit>:<path>`. A mismatch marks the affected artifact `PARTIAL` or
+  `BLOCKED`. No working-tree hash, CRLF variant, or legacy comparison value may be substituted for
+  a canonical value.
+- **Canonical basis** is Git blob LF SHA-256 only. Working-tree SHA-256 values, including CRLF and
+  LF checkout variants, are recorded solely as legacy comparison metadata and never satisfy a
+  canonical hash check.
+- **Provenance isolation:** self hashes and provenance hashes live outside canonical artifact hash
+  maps. `rea-verification.json` (R8) does not contain its own hash, and `evidence-index.json` (R4)
+  does not contain the R8 hash.
+- **External registries** are referenced by environment variable names only. Their contents are
+  `NOT_VERIFIED` unless separately and explicitly verified; absence is denial, not trust.
+- **Status floor:** Stage 05b remains `PARTIAL` / `NOT CERTIFIED` and Stage 07 remains
+  `NOT AUTHORIZED` until independent review and explicit human closure approval are recorded.
