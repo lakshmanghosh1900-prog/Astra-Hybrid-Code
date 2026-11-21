@@ -12,7 +12,8 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 from .rea.enforcement import require_stage05b_execution
-from .rea.receipt import append_audit_event
+from .rea.filelock import exclusive_file_lock
+from .rea.receipt import append_audit_event, verify_event_chain
 
 SKILL = "rea-hybrid-braining-coding"
 PROTECTED = (
@@ -70,6 +71,20 @@ def plan_digest(plan: ExecutionPlan) -> str:
     ).hexdigest()
 
 
+def execution_bundle_digest(plan: ExecutionPlan, request: PatchRequest) -> str:
+    """Digest bound by signed R1, R3 and the existing trusted-approver registry."""
+    payload = {
+        "skill": SKILL,
+        "plan_sha256": plan_digest(plan),
+        "plan_id": plan.plan_id,
+        "step_id": request.step_id,
+        "diff_sha256": request.diff_sha256,
+    }
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
 def contained(root: Path, name: str) -> Path:
     if (
         not name
@@ -77,6 +92,7 @@ def contained(root: Path, name: str) -> Path:
         or ":" in name
         or PureWindowsPath(name).is_absolute()
         or any(part in {"", ".", ".."} for part in name.split("/"))
+        or any(part.endswith((".", " ")) for part in name.split("/"))
     ):
         raise ValueError("invalid relative path")
     target = (root / name).resolve()
@@ -93,9 +109,13 @@ def contained(root: Path, name: str) -> Path:
 
 
 def patched_text(original: str, diff: str, name: str) -> str:
-    """Accept only plain unified single-file patches; reject all other syntax."""
+    """Apply a plain single-file unified patch without normalizing payload bytes.
+
+    Header/hunk framing may be LF or CRLF; body terminators are file content.
+    A no-newline marker removes only the preceding body's framing terminator.
+    """
     lines = diff.splitlines(keepends=True)
-    if lines[:2] != [f"--- a/{name}\n", f"+++ b/{name}\n"]:
+    if [line.rstrip("\r\n") for line in lines[:2]] != [f"--- a/{name}", f"+++ b/{name}"]:
         raise ValueError("patch headers do not match approved target")
     source = original.splitlines(keepends=True)
     output: list[str] = []
@@ -103,10 +123,17 @@ def patched_text(original: str, diff: str, name: str) -> str:
     index = 2
     hunks = 0
     while index < len(lines):
-        match = re.fullmatch(r"@@ -(\d+),(\d+) \+(\d+),(\d+) @@\n", lines[index])
+        match = re.fullmatch(
+            r"@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@(?: [^\r\n]*)?\r?\n",
+            lines[index],
+        )
         if match is None:
             raise ValueError("unsupported hunk")
-        start, old_count, new_start, new_count = map(int, match.groups())
+        start, old_count, new_start, new_count = (
+            int(value) if value is not None else 1 for value in match.groups()
+        )
+        if (old_count and start == 0) or (new_count and new_start == 0):
+            raise ValueError("invalid zero line offset")
         offset = start - 1 if old_count else start
         if offset < cursor or offset > len(source):
             raise ValueError("overlapping or invalid hunk")
@@ -120,13 +147,21 @@ def patched_text(original: str, diff: str, name: str) -> str:
             line = lines[index]
             if line[:1] not in {" ", "+", "-"}:
                 raise ValueError("unsupported patch line")
+            payload = line[1:]
+            if not payload.endswith("\n"):
+                raise ValueError("unterminated patch body requires newline marker")
+            if index + 1 < len(lines) and lines[index + 1].rstrip("\r\n") == (
+                "\\ No newline at end of file"
+            ):
+                payload = payload[:-2] if payload.endswith("\r\n") else payload[:-1]
+                index += 1
             if line[0] in " -":
-                if cursor >= len(source) or source[cursor] != line[1:]:
+                if cursor >= len(source) or source[cursor] != payload:
                     raise ValueError("patch context mismatch")
                 cursor += 1
                 removed += 1
             if line[0] in " +":
-                output.append(line[1:])
+                output.append(payload)
                 added += 1
             index += 1
         if (removed, added) != (old_count, new_count):
@@ -134,10 +169,13 @@ def patched_text(original: str, diff: str, name: str) -> str:
         hunks += 1
     if not hunks:
         raise ValueError("empty patch")
-    return "".join(output + source[cursor:])
+    result = output + source[cursor:]
+    if any(not line.endswith("\n") for line in result[:-1]):
+        raise ValueError("unterminated line before end of file")
+    return "".join(result)
 
 
-def execute_patch(
+def _execute_patch_locked(
     *,
     repo_root: Path,
     plan: ExecutionPlan,
@@ -146,6 +184,8 @@ def execute_patch(
     actor_id: str,
     approver_id: str,
     audit_log: Path,
+    execution_role: str = "EXECUTOR",
+    self_certified: bool = False,
 ) -> None:
     """Approval digest comes from the trusted host, never provider output.
 
@@ -184,12 +224,26 @@ def execute_patch(
     result = require_stage05b_execution(
         repo_root=root,
         actor_id=actor_id,
-        role="SYSTEM_VERIFIER",
+        role=execution_role,
         approver_id=approver_id,
+        self_certified=self_certified,
         audit_log_path=audit_log,
     )
     if not result.allowed:
         raise PermissionError("rea-gate denied: " + "; ".join(result.blocking_reasons))
+    # The real gate authenticates this signed R1 bundle and checks its R3 and
+    # trusted-approver registry binding. A caller digest alone is insufficient.
+    authorization = json.loads((root / "authorization.json").read_text(encoding="utf-8"))
+    bundle = execution_bundle_digest(plan, request)
+    if authorization.get("bundle_sha256") != bundle:
+        raise PermissionError("signed authorization does not bind this plan and patch")
+    authorization_id = authorization["authorization"]["authorization_id"]
+    operation = f"stage07:{authorization_id}:{bundle}"
+    if audit_log.exists():
+        log = json.loads(audit_log.read_text(encoding="utf-8"))
+        events = verify_event_chain(log["events"], schema_version=log["schema_version"])
+        if any(event.get("operation_id") == operation for event in events):
+            raise PermissionError("execution intent already consumed; review required")
     original = target.read_bytes()
     updated = patched_text(original.decode("utf-8"), request.diff, name).encode()
     append_audit_event(
@@ -198,10 +252,44 @@ def execute_patch(
         event_type="STAGE07_PATCH_INTENT",
         actor_type="SYSTEM_VERIFIER",
         actor_identity=actor_id,
-        authorization_id=None,
+        authorization_id=authorization_id,
         decision="APPROVED",
         evidence_reference=f"{digest}:{request.step_id}:{request.diff_sha256}",
+        operation_id=operation,
     )
     if contained(root, name) != target or target.read_bytes() != original:
         raise ValueError("target changed during authorization")
     target.write_bytes(updated)
+
+
+def execute_patch(
+    *,
+    repo_root: Path,
+    plan: ExecutionPlan,
+    request: PatchRequest,
+    approved_plan_sha256: str,
+    actor_id: str,
+    approver_id: str,
+    audit_log: Path,
+    execution_role: str = "EXECUTOR",
+    self_certified: bool = False,
+) -> None:
+    """Serialize same-log executions; trusted host must mandate one external log.
+
+    A consumed intent is never retried automatically, including after write failure.
+    Completion/failure receipts and crash recovery remain host responsibilities.
+    """
+    if audit_log.resolve().is_relative_to(repo_root.resolve()):
+        raise ValueError("audit log must be external")
+    with exclusive_file_lock(audit_log.with_name(audit_log.name + ".stage07.lock")):
+        _execute_patch_locked(
+            repo_root=repo_root,
+            plan=plan,
+            request=request,
+            approved_plan_sha256=approved_plan_sha256,
+            actor_id=actor_id,
+            approver_id=approver_id,
+            audit_log=audit_log,
+            execution_role=execution_role,
+            self_certified=self_certified,
+        )
