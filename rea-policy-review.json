@@ -6,6 +6,46 @@
   "generated_on": "2026-11-21",
   "schema_validation": "UNAVAILABLE - no authoritative repository schema exists for R7; JSON syntax validated only",
   "review_basis": "Static source and artifact inspection only; no gate execution, no registry inspection, no live REA/Worker run",
+  "verification_evidence": {
+    "hash_basis": "Git blob LF SHA-256 computed from canonical LF bytes via git cat-file blob <commit>:<path>; working-tree CRLF values are legacy comparison only",
+    "commands": [
+      {
+        "command": ".venv\\Scripts\\python.exe -B -m pytest -q",
+        "exit_code": 0,
+        "result": "563 tests, 561 passed, 2 skipped, 0 failures, 0 errors (exit 0)"
+      },
+      {
+        "command": ".venv\\Scripts\\python.exe -B -m ruff check --no-cache .",
+        "exit_code": 0,
+        "result": "All checks passed!"
+      },
+      {
+        "command": ".venv\\Scripts\\python.exe -B -m ruff format --check --no-cache src tests",
+        "exit_code": 0,
+        "result": "75 files already formatted"
+      },
+      {
+        "command": ".venv\\Scripts\\python.exe -B -m mypy src",
+        "exit_code": 0,
+        "result": "Success: no issues found in 45 source files"
+      },
+      {
+        "command": ".tools/gitleaks.exe/gitleaks.exe git --no-banner .",
+        "exit_code": 0,
+        "result": "102 commits scanned; no leaks found"
+      }
+    ],
+    "canonical_blob_sha256_references": {
+      "R1_authorization.json": "57446e110c2f0a6ec9f677c334357486f52bee6b81eab56ab0a9961c01bb72b7",
+      "R2_license-check.json": "f557371988cf6c7c8a3e8ec0998da08e631df605611b2b8dbb1eb975e199953d",
+      "R3_rea-input-manifest.json": "473e55eae503d3c159bbcbdf603575bd8536563b85a5aa3e7968f04fa8f4c77b",
+      "reports/worker-smoke.json": "8dda8c130f51debc5d6672ce608f7dc24242acc071839f691a120e1ed0967cd5",
+      "scripts/validate_r1_r3.py": "0b6db36f56addbec6540cae79c279ab5fe1ada244e3144d9034e2dd21d6850d1"
+    },
+    "verified_technical_checks": "PASS - recorded command exit codes and canonical Git blob LF SHA-256 references reproduce on the reconciliation tree",
+    "pending_independent_review": "PENDING - no independent reviewer identity, role, or disposition is recorded in repository evidence",
+    "pending_human_closure": "PENDING - no explicit human closure approval is recorded; Stage 05b remains PARTIAL / NOT CERTIFIED and Stage 07 remains NOT AUTHORIZED"
+  },
   "policy_checks_performed": [
     {
       "id": "P-01",
